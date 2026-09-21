@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Produk Game - Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/admin/admin.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+
+<aside class="admin-sidebar" id="sidebar">
+  <div class="p-6 border-b border-white/5">
+    <a href="/admin/admin-dashboard.html" class="text-xl font-extrabold neon-text">🛡️ ADMIN PANEL</a>
+  </div>
+  <nav class="py-4">
+    <a href="/admin/admin-dashboard.html" class="admin-nav-item">📊 Dashboard</a>
+    <a href="/admin/admin-produk.html" class="admin-nav-item active">🎮 Produk Game</a>
+    <a href="/admin/admin-pesanan.html" class="admin-nav-item">📦 Pesanan</a>
+    <a href="/admin/admin-user.html" class="admin-nav-item">👥 Users</a>
+    <a href="/index.html" class="admin-nav-item">🏠 Lihat Toko</a>
+    <a href="#" id="btnLogout" class="admin-nav-item" style="color:#ef4444;">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main class="admin-main">
+  <header class="glass px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <button id="btnToggleSidebar" class="md:hidden text-2xl">☰</button>
+      <h1 class="text-xl font-bold">🎮 Manajemen Produk</h1>
+    </div>
+    <button id="btnAddGame" class="glow-btn text-sm">➕ Tambah Game</button>
+  </header>
+
+  <div class="p-4 md:p-8">
+    <div class="glass rounded-2xl p-6 mb-6">
+      <h2 class="font-bold text-lg mb-4">🎮 Daftar Game</h2>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Icon</th>
+              <th>Nama Game</th>
+              <th>Publisher</th>
+              <th>Server ID</th>
+              <th>Produk</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="gamesTable"></tbody>
+        </table>
+      </div>
+      <div id="emptyGames" class="hidden text-center py-12 text-gray-400">
+        <div class="text-4xl mb-2">🎮</div>
+        <p>Belum ada game. Klik "Tambah Game" untuk mulai.</p>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-lg">💎 Daftar Produk</h2>
+        <select id="filterGame" class="input-field text-sm" style="width:auto;">
+          <option value="">Semua Game</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Game</th>
+              <th>Nama Produk</th>
+              <th>Harga</th>
+              <th>Bonus</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="productsTable"></tbody>
+        </table>
+      </div>
+      <button id="btnAddProduct" class="glow-btn mt-4 text-sm">➕ Tambah Produk</button>
+    </div>
+  </div>
+</main>
+
+<div id="modalGame" class="modal">
+  <div class="modal-content glass rounded-2xl p-6">
+    <h3 id="modalGameTitle" class="text-xl font-bold mb-4">Tambah Game</h3>
+    <form id="formGame" class="space-y-4">
+      <input type="hidden" id="gameId">
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Nama Game *</label>
+        <input id="gameName" type="text" class="input-field" required>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Publisher</label>
+        <input id="gamePublisher" type="text" class="input-field" placeholder="Moonton, Garena, dll">
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">URL Gambar / Icon</label>
+        <input id="gameImage" type="url" class="input-field" placeholder="https://...">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Badge</label>
+          <select id="gameBadge" class="input-field">
+            <option value="">Tidak ada</option>
+            <option value="popular">Popular</option>
+            <option value="new">New</option>
+            <option value="hot">Hot</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Rating</label>
+          <input id="gameRating" type="number" step="0.1" min="0" max="5" class="input-field" value="5.0">
+        </div>
+      </div>
+      <div>
+        <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+          <input id="gameHasServer" type="checkbox" checked class="w-4 h-4">
+          <span>Game ini butuh Server ID (seperti MLBB)</span>
+        </label>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" id="btnCancelGame" class="flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/5">Batal</button>
+        <button type="submit" class="flex-1 glow-btn">💾 Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="modalProduct" class="modal">
+  <div class="modal-content glass rounded-2xl p-6">
+    <h3 id="modalProductTitle" class="text-xl font-bold mb-4">Tambah Produk</h3>
+    <form id="formProduct" class="space-y-4">
+      <input type="hidden" id="productId">
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Game *</label>
+        <select id="productGame" class="input-field" required></select>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Nama Produk *</label>
+        <input id="productName" type="text" class="input-field" placeholder="86 Diamonds" required>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Harga (Rp) *</label>
+          <input id="productPrice" type="number" min="0" class="input-field" required>
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Bonus (opsional)</label>
+          <input id="productBonus" type="text" class="input-field" placeholder="+ 8 Diamonds">
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" id="btnCancelProduct" class="flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/5">Batal</button>
+        <button type="submit" class="flex-1 glow-btn">💾 Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+import {
+  db, auth, ADMIN_EMAIL,
+  collection, doc, addDoc, updateDoc, deleteDoc, getDocs,
+  onSnapshot, query, where, serverTimestamp, onAuthStateChanged, signOut, toast, formatRupiah
+} from "/assets/js/main.js";
+
+let games = [];
+let products = [];
+
+onAuthStateChanged(auth, (user) => {
+  if (!user || user.email !== ADMIN_EMAIL) location.href = "/admin/admin-login.html";
+});
+
+document.getElementById("btnLogout").onclick = async (e) => {
+  e.preventDefault();
+  await signOut(auth);
+  location.href = "/admin/admin-login.html";
+};
+
+document.getElementById("btnToggleSidebar").onclick = () => {
+  document.getElementById("sidebar").classList.toggle("open");
+};
+
+onSnapshot(collection(db, "games"), (snap) => {
+  games = [];
+  snap.forEach((d) => games.push({ id: d.id, ...d.data() }));
+  renderGamesTable();
+  updateGameFilters();
+});
+
+onSnapshot(collection(db, "products"), (snap) => {
+  products = [];
+  snap.forEach((d) => products.push({ id: d.id, ...d.data() }));
+  renderProductsTable();
+});
+
+function renderGamesTable() {
+  const tbody = document.getElementById("gamesTable");
+  if (games.length === 0) {
+    tbody.innerHTML = "";
+    document.getElementById("emptyGames").classList.remove("hidden");
+    return;
+  }
+  document.getElementById("emptyGames").classList.add("hidden");
+  tbody.innerHTML = games.map((g) => `
+    <tr>
+      <td><img src="${g.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/50'"></td>
+      <td class="font-semibold">${g.name}</td>
+      <td>${g.publisher || '-'}</td>
+      <td>${g.hasServer === false ? '<span class="text-gray-500">Tidak</span>' : '<span class="text-green-400">Ya</span>'}</td>
+      <td>${products.filter((p) => p.gameId === g.id).length} produk</td>
+      <td>
+        <div class="flex gap-2">
+          <button class="btn-sm btn-info" onclick="editGame('${g.id}')">✏️ Edit</button>
+          <button class="btn-sm btn-danger" onclick="deleteGame('${g.id}', '${g.name}')">🗑️ Hapus</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function renderProductsTable() {
+  const filter = document.getElementById("filterGame").value;
+  const list = filter ? products.filter((p) => p.gameId === filter) : products;
+  const tbody = document.getElementById("productsTable");
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">Belum ada produk</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map((p) => {
+    const game = games.find((g) => g.id === p.gameId);
+    return `
+      <tr>
+        <td>${game ? game.name : 'Unknown'}</td>
+        <td class="font-semibold">${p.name}</td>
+        <td class="text-cyan-400 font-semibold">${formatRupiah(p.price)}</td>
+        <td>${p.bonus || '-'}</td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn-sm btn-info" onclick="editProduct('${p.id}')">✏️ Edit</button>
+            <button class="btn-sm btn-danger" onclick="deleteProduct('${p.id}', '${p.name}')">🗑️ Hapus</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function updateGameFilters() {
+  const sel = document.getElementById("filterGame");
+  const selProduct = document.getElementById("productGame");
+  const currentVal = sel.value;
+  sel.innerHTML = `<option value="">Semua Game</option>` + games.map((g) => `<option value="${g.id}">${g.name}</option>`).join("");
+  sel.value = currentVal;
+  selProduct.innerHTML = `<option value="">-- Pilih Game --</option>` + games.map((g) => `<option value="${g.id}">${g.name}</option>`).join("");
+}
+
+document.getElementById("filterGame").addEventListener("change", renderProductsTable);
+
+document.getElementById("btnAddGame").onclick = () => openGameModal();
+document.getElementById("btnCancelGame").onclick = () => document.getElementById("modalGame").classList.remove("show");
+
+function openGameModal(data = null) {
+  document.getElementById("modalGameTitle").textContent = data ? "Edit Game" : "Tambah Game";
+  document.getElementById("gameId").value = data?.id || "";
+  document.getElementById("gameName").value = data?.name || "";
+  document.getElementById("gamePublisher").value = data?.publisher || "";
+  document.getElementById("gameImage").value = data?.image || "";
+  document.getElementById("gameBadge").value = data?.badge || "";
+  document.getElementById("gameRating").value = data?.rating || "5.0";
+  document.getElementById("gameHasServer").checked = data ? data.hasServer !== false : true;
+  document.getElementById("modalGame").classList.add("show");
+}
+
+document.getElementById("formGame").onsubmit = async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("gameId").value;
+  const data = {
+    name: document.getElementById("gameName").value.trim(),
+    publisher: document.getElementById("gamePublisher").value.trim(),
+    image: document.getElementById("gameImage").value.trim(),
+    badge: document.getElementById("gameBadge").value,
+    rating: parseFloat(document.getElementById("gameRating").value) || 5.0,
+    hasServer: document.getElementById("gameHasServer").checked,
+    updatedAt: serverTimestamp()
+  };
+  try {
+    if (id) {
+      await updateDoc(doc(db, "games", id), data);
+      toast("Game diupdate!", "success");
+    } else {
+      data.createdAt = serverTimestamp();
+      await addDoc(collection(db, "games"), data);
+      toast("Game ditambahkan!", "success");
+    }
+    document.getElementById("modalGame").classList.remove("show");
+  } catch (err) {
+    toast("Gagal: " + err.message, "error");
+  }
+};
+
+window.editGame = (id) => {
+  const g = games.find((x) => x.id === id);
+  if (g) openGameModal(g);
+};
+
+window.deleteGame = async (id, name) => {
+  if (!confirm(`Hapus game "${name}"? Produk terkait tidak akan terhapus otomatis.`)) return;
+  try {
+    await deleteDoc(doc(db, "games", id));
+    toast("Game dihapus!", "success");
+  } catch (err) {
+    toast("Gagal: " + err.message, "error");
+  }
+};
+
+document.getElementById("btnAddProduct").onclick = () => openProductModal();
+document.getElementById("btnCancelProduct").onclick = () => document.getElementById("modalProduct").classList.remove("show");
+
+function openProductModal(data = null) {
+  document.getElementById("modalProductTitle").textContent = data ? "Edit Produk" : "Tambah Produk";
+  document.getElementById("productId").value = data?.id || "";
+  document.getElementById("productGame").value = data?.gameId || "";
+  document.getElementById("productName").value = data?.name || "";
+  document.getElementById("productPrice").value = data?.price || "";
+  document.getElementById("productBonus").value = data?.bonus || "";
+  document.getElementById("modalProduct").classList.add("show");
+}
+
+document.getElementById("formProduct").onsubmit = async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("productId").value;
+  const data = {
+    gameId: document.getElementById("productGame").value,
+    name: document.getElementById("productName").value.trim(),
+    price: parseInt(document.getElementById("productPrice").value),
+    bonus: document.getElementById("productBonus").value.trim(),
+    updatedAt: serverTimestamp()
+  };
+  try {
+    if (id) {
+      await updateDoc(doc(db, "products", id), data);
+      toast("Produk diupdate!", "success");
+    } else {
+      data.createdAt = serverTimestamp();
+      await addDoc(collection(db, "products"), data);
+      toast("Produk ditambahkan!", "success");
+    }
+    document.getElementById("modalProduct").classList.remove("show");
+  } catch (err) {
+    toast("Gagal: " + err.message, "error");
+  }
+};
+
+window.editProduct = (id) => {
+  const p = products.find((x) => x.id === id);
+  if (p) openProductModal(p);
+};
+
+window.deleteProduct = async (id, name) => {
+  if (!confirm(`Hapus produk "${name}"?`)) return;
+  try {
+    await deleteDoc(doc(db, "products", id));
+    toast("Produk dihapus!", "success");
+  } catch (err) {
+    toast("Gagal: " + err.message, "error");
+  }
+};
+</script>
+
+</body>
+</html>
