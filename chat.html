@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Chat - CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body class="h-screen flex flex-col">
+
+<nav class="glass-strong px-4 md:px-8 py-3 flex items-center justify-between shrink-0">
+  <a href="/index.html" class="flex items-center gap-2">
+    <img src="/assets/image/logo.jpg" class="w-8 h-8 rounded-lg" onerror="this.style.display='none'">
+    <span class="text-lg font-black neon-text">CHAOS<span class="text-white">STORE</span></span>
+  </a>
+  <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-400/10 border border-cyan-400/30 text-xs">
+      <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+      <span class="font-mono text-cyan-300" id="phoneNav">-</span>
+    </div>
+    <a href="/index.html" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-xs">← Beranda</a>
+  </div>
+</nav>
+
+<main class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col gap-4 overflow-hidden">
+  <div class="glass-3d p-4 flex items-center gap-3 shrink-0">
+    <div class="relative">
+      <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-2xl">🛡️</div>
+      <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-black"></span>
+    </div>
+    <div class="flex-1">
+      <div class="font-bold">Customer Support</div>
+      <div class="text-xs text-green-400 flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> Online sekarang
+      </div>
+    </div>
+    <button id="btnChangeName" class="btn-sm btn-info">✏️ Nama</button>
+  </div>
+
+  <div class="glass-3d flex-1 flex flex-col overflow-hidden">
+    <div class="chat-container" id="chatBox">
+      <div class="text-center py-8 text-gray-500 text-sm">
+        <div class="text-4xl mb-2">💬</div>
+        <p>Mulai percakapan dengan admin</p>
+      </div>
+    </div>
+
+    <div class="p-3 border-t border-white/5 flex items-end gap-2">
+      <button id="btnAttach" class="p-2.5 rounded-xl border border-white/10 hover:bg-white/5 text-xl transition">📎</button>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+      <textarea id="msgInput" rows="1" placeholder="Ketik pesan..." class="input-field flex-1 resize-none max-h-32" style="min-height:44px;"></textarea>
+      <button id="btnSend" class="glow-btn px-5 py-2.5">➤</button>
+    </div>
+  </div>
+</main>
+
+<div id="imgPreviewModal" class="modal">
+  <div class="modal-content">
+    <img id="imgPreviewSrc" class="w-full rounded-xl">
+  </div>
+</div>
+
+<script type="module">
+import {
+  db, collection, doc, addDoc, setDoc, getDoc, onSnapshot, query, orderBy,
+  serverTimestamp, getCurrentUser, isLoggedIn, setCurrentUser,
+  uploadToImgBB, toast, formatTime, escapeHtml, playSound
+} from "/assets/js/main.js";
+
+if (!isLoggedIn()) {
+  sessionStorage.setItem("chaos_redirect", "/chat.html");
+  location.href = "/login.html";
+}
+
+let currentUser = getCurrentUser();
+let chatId = currentUser.phone;
+document.getElementById("phoneNav").textContent = "+" + chatId;
+
+let soundEnabled = true;
+let firstLoad = true;
+
+async function ensureChatSession() {
+  const chatRef = doc(db, "chats", chatId);
+  const snap = await getDoc(chatRef);
+  if (!snap.exists()) {
+    await setDoc(chatRef, {
+      deviceId: chatId,
+      phone: chatId,
+      username: currentUser.username || "Guest",
+      lastMessage: "",
+      lastMessageAt: serverTimestamp(),
+      unreadUser: 0,
+      unreadAdmin: 0,
+      createdAt: serverTimestamp()
+    });
+  } else {
+    await setDoc(chatRef, {
+      username: currentUser.username || "Guest",
+      phone: chatId
+    }, { merge: true });
+  }
+}
+
+await ensureChatSession();
+
+const chatBox = document.getElementById("chatBox");
+const msgInput = document.getElementById("msgInput");
+const btnSend = document.getElementById("btnSend");
+const btnAttach = document.getElementById("btnAttach");
+const fileInput = document.getElementById("fileInput");
+
+const msgQuery = query(
+  collection(db, "chats", chatId, "messages"),
+  orderBy("createdAt", "asc")
+);
+
+onSnapshot(msgQuery, (snap) => {
+  chatBox.innerHTML = "";
+  if (snap.empty) {
+    chatBox.innerHTML = `
+      <div class="text-center py-8 text-gray-500 text-sm">
+        <div class="text-4xl mb-2">💬</div>
+        <p>Mulai percakapan dengan admin</p>
+        <p class="text-xs mt-1">No WA: <span class="font-mono text-cyan-400">+${chatId}</span></p>
+      </div>
+    `;
+    return;
+  }
+  snap.forEach((d) => {
+    const msg = d.data();
+    renderMessage(msg);
+  });
+
+  setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 50);
+
+  if (!firstLoad && soundEnabled) {
+    const lastMsg = snap.docs[snap.docs.length - 1].data();
+    if (lastMsg.from === "admin") {
+      playSound("notif");
+      setDoc(doc(db, "chats", chatId), { unreadUser: 0 }, { merge: true });
+    }
+  }
+  firstLoad = false;
+});
+
+function renderMessage(m) {
+  const isUser = m.from === "user";
+  const wrapper = document.createElement("div");
+  wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+  wrapper.innerHTML = `
+    <div class="chat-bubble ${isUser ? 'chat-user' : 'chat-admin'}">
+      ${m.image ? `<img src="${m.image}" class="rounded-lg mb-2 max-w-full cursor-pointer" onclick="document.getElementById('imgPreviewSrc').src='${m.image}';document.getElementById('imgPreviewModal').classList.add('show')">` : ''}
+      ${m.text ? `<div>${escapeHtml(m.text)}</div>` : ''}
+      <span class="chat-time">${isUser ? '👤 ' : '🛡️ Admin • '}${formatTime(m.createdAt)}</span>
+    </div>
+  `;
+  chatBox.appendChild(wrapper);
+}
+
+async function sendMessage(text = "", imageUrl = "") {
+  if (!text && !imageUrl) return;
+  try {
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      from: "user",
+      text: text || "",
+      image: imageUrl || "",
+      username: currentUser.username || "Guest",
+      createdAt: serverTimestamp()
+    });
+    await setDoc(doc(db, "chats", chatId), {
+      lastMessage: text || "📷 Gambar",
+      lastMessageAt: serverTimestamp(),
+      username: currentUser.username || "Guest",
+      phone: chatId,
+      unreadAdmin: 1
+    }, { merge: true });
+  } catch (e) {
+    console.error(e);
+    toast("Gagal kirim pesan", "error");
+  }
+}
+
+btnSend.onclick = async () => {
+  const text = msgInput.value.trim();
+  if (!text) return;
+  msgInput.value = "";
+  msgInput.style.height = "auto";
+  await sendMessage(text);
+};
+
+msgInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    btnSend.click();
+  }
+});
+
+msgInput.addEventListener("input", () => {
+  msgInput.style.height = "auto";
+  msgInput.style.height = Math.min(msgInput.scrollHeight, 128) + "px";
+});
+
+btnAttach.onclick = () => fileInput.click();
+
+fileInput.onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    toast("Max 5MB", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    chatBox.insertAdjacentHTML("beforeend", `
+      <div class="flex justify-end"><div class="chat-bubble chat-user opacity-50">
+        <img src="${ev.target.result}" class="rounded-lg mb-2 max-w-full">
+        <span class="chat-time">⏳ Mengunggah...</span>
+      </div></div>
+    `);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  };
+  reader.readAsDataURL(file);
+
+  toast("Mengunggah gambar...", "info");
+  try {
+    const url = await uploadToImgBB(file);
+    await sendMessage("", url);
+    toast("Gambar terkirim!", "success");
+  } catch (err) {
+    toast("Gagal upload: " + err.message, "error");
+  }
+  fileInput.value = "";
+};
+
+document.getElementById("btnChangeName").onclick = async () => {
+  const name = prompt("Nama baru:", currentUser.username);
+  if (name && name.trim()) {
+    const newName = name.trim().substring(0, 20);
+    currentUser.username = newName;
+    setCurrentUser(currentUser);
+    await setDoc(doc(db, "users", currentUser.phone), { username: newName }, { merge: true });
+    await setDoc(doc(db, "chats", chatId), { username: newName }, { merge: true });
+    toast("Nama diubah!", "success");
+    setTimeout(() => location.reload(), 600);
+  }
+};
+
+document.getElementById("imgPreviewModal").onclick = function () {
+  this.classList.remove("show");
+};
+</script>
+
+</body>
+</html>

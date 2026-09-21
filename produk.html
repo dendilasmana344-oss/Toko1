@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top Up - CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<nav class="glass-strong sticky top-0 z-50 px-4 md:px-8 py-3">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <a href="/index.html" class="flex items-center gap-2">
+      <img src="/assets/image/logo.jpg" class="w-8 h-8 rounded-lg" onerror="this.style.display='none'">
+      <span class="text-lg md:text-xl font-black neon-text">CHAOS<span class="text-white">STORE</span></span>
+    </a>
+    <a href="/index.html" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-sm">← Kembali</a>
+  </div>
+</nav>
+
+<section class="max-w-7xl mx-auto px-4 md:px-8 py-6">
+  <div id="loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-4">
+      <div class="skeleton h-40"></div>
+      <div class="skeleton h-96"></div>
+    </div>
+    <div class="skeleton h-96"></div>
+  </div>
+
+  <div id="content" class="hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="glass-3d p-6">
+          <div class="flex gap-4 items-start">
+            <img id="gameImg" class="w-24 h-24 rounded-xl object-cover" alt="Game">
+            <div class="flex-1">
+              <h1 id="gameName" class="text-2xl md:text-3xl font-black mb-1"></h1>
+              <p id="gamePublisher" class="text-gray-400 text-sm mb-2"></p>
+              <div class="flex gap-2 text-xs">
+                <span class="badge badge-new">⚡ Instan</span>
+                <span class="badge badge-popular">🔒 Aman</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-3d p-6">
+          <h2 class="text-xl font-bold mb-4"><span class="step-badge">1</span> Data Akun</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm text-gray-400 mb-2 block">User ID *</label>
+              <input id="inputUserId" type="text" class="input-field" placeholder="Contoh: 123456789">
+            </div>
+            <div id="serverWrap">
+              <label class="text-sm text-gray-400 mb-2 block">Server ID *</label>
+              <input id="inputServer" type="text" class="input-field" placeholder="Contoh: 1234">
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-3">💡 Pastikan ID & server benar.</p>
+        </div>
+
+        <div class="glass-3d p-6">
+          <h2 class="text-xl font-bold mb-4"><span class="step-badge">2</span> Pilih Nominal</h2>
+          <div id="productsGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+          <div id="emptyProducts" class="hidden text-center py-8 text-gray-400">
+            <div class="text-4xl mb-2">📦</div>
+            <p>Belum ada produk</p>
+          </div>
+        </div>
+
+        <div class="glass-3d p-6">
+          <h2 class="text-xl font-bold mb-4"><span class="step-badge">3</span> Metode Pembayaran</h2>
+          <div id="paymentsGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+        </div>
+
+        <div class="glass-3d p-6">
+          <h2 class="text-xl font-bold mb-4"><span class="step-badge">4</span> Kontak (opsional)</h2>
+          <input id="inputContact" type="text" class="input-field" placeholder="WhatsApp / Email">
+        </div>
+      </div>
+
+      <div class="lg:col-span-1">
+        <div class="glass-3d p-6 sticky top-20">
+          <h2 class="text-xl font-bold mb-4">📋 Ringkasan</h2>
+          <div class="space-y-3 text-sm border-b border-white/10 pb-4 mb-4">
+            <div class="flex justify-between"><span class="text-gray-400">Game</span><span id="sumGame" class="font-semibold">-</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Produk</span><span id="sumProduct" class="font-semibold">-</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">User ID</span><span id="sumUserId" class="font-semibold">-</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Server</span><span id="sumServer" class="font-semibold">-</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Pembayaran</span><span id="sumPayment" class="font-semibold">-</span></div>
+          </div>
+          <div class="mb-4">
+            <div class="text-sm text-gray-400 mb-1">Total</div>
+            <div id="sumTotal" class="text-3xl font-black neon-text">Rp 0</div>
+          </div>
+          <button id="btnCheckout" class="glow-btn w-full disabled:opacity-40" disabled>💳 Beli Sekarang</button>
+          <p class="text-xs text-gray-500 text-center mt-3" id="userInfo"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="paymentModal" class="modal">
+  <div class="modal-content glass-3d rounded-2xl p-6">
+    <div id="paymentContent"></div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  db, collection, doc, getDoc, getDocs, addDoc, query, where,
+  serverTimestamp, toast, formatRupiah, generateOrderId, getCurrentUser, isLoggedIn, playSound
+} from "/assets/js/main.js";
+
+const params = new URLSearchParams(location.search);
+const gameId = params.get("id");
+
+let currentGame = null;
+let currentProducts = [];
+let selectedProduct = null;
+let selectedPayment = null;
+let currentUser = getCurrentUser();
+let payments = { banks: [], ewallets: [], qrisProvider: "" };
+
+if (isLoggedIn() && currentUser) {
+  document.getElementById("userInfo").textContent = "Login: +" + currentUser.phone;
+} else {
+  document.getElementById("userInfo").textContent = "Belum login — bisa guest order";
+}
+
+async function load() {
+  if (!gameId) return location.href = "/index.html";
+  const snap = await getDoc(doc(db, "games", gameId));
+  if (!snap.exists()) {
+    toast("Game tidak ditemukan", "error");
+    return setTimeout(() => location.href = "/index.html", 1000);
+  }
+  currentGame = { id: snap.id, ...snap.data() };
+  document.getElementById("gameImg").src = currentGame.image || "/assets/image/game-default.jpg";
+  document.getElementById("gameName").textContent = currentGame.name;
+  document.getElementById("gamePublisher").textContent = currentGame.publisher || "Publisher";
+  document.getElementById("sumGame").textContent = currentGame.name;
+  if (currentGame.hasServer === false) document.getElementById("serverWrap").style.display = "none";
+
+  const q = query(collection(db, "products"), where("gameId", "==", gameId));
+  const prod = await getDocs(q);
+  currentProducts = [];
+  prod.forEach((d) => currentProducts.push({ id: d.id, ...d.data() }));
+  currentProducts.sort((a, b) => (a.price || 0) - (b.price || 0));
+
+  document.getElementById("productsGrid").innerHTML = currentProducts.map((p) => `
+    <div class="payment-method product-item" data-id="${p.id}">
+      <div class="text-base font-bold mb-1">${p.name}</div>
+      <div class="text-sm font-semibold neon-text">${formatRupiah(p.price)}</div>
+      ${p.bonus ? `<div class="text-xs text-green-400 mt-1">${p.bonus}</div>` : ''}
+    </div>
+  `).join("");
+
+  if (currentProducts.length === 0) document.getElementById("emptyProducts").classList.remove("hidden");
+
+  document.querySelectorAll(".product-item").forEach((el) => {
+    el.onclick = () => {
+      document.querySelectorAll(".product-item").forEach((x) => x.classList.remove("selected"));
+      el.classList.add("selected");
+      selectedProduct = currentProducts.find((p) => p.id === el.dataset.id);
+      document.getElementById("sumProduct").textContent = selectedProduct.name;
+      updateTotal();
+    };
+  });
+
+  const paySnap = await getDoc(doc(db, "settings", "payments"));
+  if (paySnap.exists()) payments = { ...payments, ...paySnap.data() };
+
+  renderPayments();
+
+  document.getElementById("loading").classList.add("hidden");
+  document.getElementById("content").classList.remove("hidden");
+}
+
+function renderPayments() {
+  const grid = document.getElementById("paymentsGrid");
+  const methods = [];
+
+  if (payments.qrisProvider) {
+    methods.push({ id: "qris", name: "QRIS", icon: "📱", desc: "Scan otomatis" });
+  } else {
+    methods.push({ id: "qris", name: "QRIS", icon: "📱", desc: "Scan QR" });
+  }
+
+  (payments.banks || []).forEach((b) => {
+    methods.push({ id: "bank_" + b.name, name: b.name, icon: "🏦", desc: "Transfer Bank", data: b });
+  });
+
+  (payments.ewallets || []).forEach((e) => {
+    const icons = { DANA: "💙", OVO: "💜", GOPAY: "💚", ShopeePay: "🧡", LinkAja: "❤️" };
+    methods.push({ id: "ewallet_" + e.name, name: e.name, icon: icons[e.name] || "💳", desc: "E-Wallet", data: e });
+  });
+
+  methods.push({ id: "alfamart", name: "Alfamart", icon: "🏪", desc: "Minimarket" });
+  methods.push({ id: "indomaret", name: "Indomaret", icon: "🏬", desc: "Minimarket" });
+
+  grid.innerHTML = methods.map((m) => `
+    <div class="payment-method" data-id="${m.id}">
+      <div class="text-3xl mb-1">${m.icon}</div>
+      <div class="font-bold text-sm">${m.name}</div>
+      <div class="text-xs text-gray-400">${m.desc}</div>
+    </div>
+  `).join("");
+
+  grid.querySelectorAll(".payment-method").forEach((el) => {
+    el.onclick = () => {
+      grid.querySelectorAll(".payment-method").forEach((x) => x.classList.remove("selected"));
+      el.classList.add("selected");
+      selectedPayment = methods.find((m) => m.id === el.dataset.id);
+      document.getElementById("sumPayment").textContent = selectedPayment.name;
+      updateTotal();
+    };
+  });
+}
+
+function updateTotal() {
+  const userId = document.getElementById("inputUserId").value.trim();
+  const server = document.getElementById("inputServer")?.value.trim() || "";
+  document.getElementById("sumUserId").textContent = userId || "-";
+  document.getElementById("sumServer").textContent = server || "-";
+  document.getElementById("sumTotal").textContent = formatRupiah(selectedProduct?.price || 0);
+  document.getElementById("btnCheckout").disabled = !(selectedProduct && selectedPayment && userId);
+}
+
+["inputUserId", "inputServer", "inputContact"].forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("input", updateTotal);
+});
+
+document.getElementById("btnCheckout").onclick = () => {
+  const userId = document.getElementById("inputUserId").value.trim();
+  const serverId = document.getElementById("inputServer")?.value.trim() || "";
+  const contact = document.getElementById("inputContact").value.trim();
+  if (currentGame.hasServer !== false && !serverId) return toast("Server ID wajib diisi", "error");
+
+  const orderId = generateOrderId();
+  const total = selectedProduct.price;
+  const modal = document.getElementById("paymentModal");
+  const content = document.getElementById("paymentContent");
+
+  content.innerHTML = `
+    <div class="text-center mb-6">
+      <div class="text-4xl mb-2">${selectedPayment.icon}</div>
+      <h3 class="text-2xl font-bold mb-1">Pembayaran</h3>
+      <p class="text-gray-400 text-sm">Selesaikan dalam 15 menit</p>
+    </div>
+    <div class="glass rounded-xl p-4 mb-4 space-y-2 text-sm">
+      <div class="flex justify-between"><span class="text-gray-400">Order ID</span><span class="font-mono font-semibold text-cyan-400">${orderId}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">Game</span><span>${currentGame.name}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">Produk</span><span>${selectedProduct.name}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">User ID</span><span>${userId}</span></div>
+      ${serverId ? `<div class="flex justify-between"><span class="text-gray-400">Server</span><span>${serverId}</span></div>` : ''}
+      <div class="flex justify-between border-t border-white/10 pt-2 mt-2"><span class="text-gray-400">Total</span><span class="font-bold neon-text text-lg">${formatRupiah(total)}</span></div>
+    </div>
+    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4 text-xs text-yellow-300 text-center">
+      ⏱️ Selesaikan dalam <span id="cd" class="font-bold">15:00</span>
+    </div>
+    <div class="flex gap-3">
+      <button id="btnCancel" class="flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/5">Batal</button>
+      <button id="btnConfirm" class="flex-1 glow-btn">✅ Buat Pesanan</button>
+    </div>
+  `;
+  modal.classList.add("show");
+
+  let sec = 900;
+  const cd = document.getElementById("cd");
+  const timer = setInterval(() => {
+    sec--;
+    if (sec <= 0) { clearInterval(timer); modal.classList.remove("show"); toast("Waktu habis", "error"); return; }
+    cd.textContent = `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+  }, 1000);
+
+  document.getElementById("btnCancel").onclick = () => { clearInterval(timer); modal.classList.remove("show"); };
+
+  document.getElementById("btnConfirm").onclick = async () => {
+    clearInterval(timer);
+    const btn = document.getElementById("btnConfirm");
+    btn.disabled = true;
+    btn.textContent = "⏳ Memproses...";
+    try {
+      await addDoc(collection(db, "orders"), {
+        orderId,
+        userId: currentUser?.phone || "guest",
+        deviceId: currentUser?.phone || "guest",
+        gameId: currentGame.id,
+        gameName: currentGame.name,
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        price: total,
+        gameUserId: userId,
+        serverId: serverId,
+        contact,
+        paymentMethod: selectedPayment.id,
+        paymentName: selectedPayment.name,
+        paymentData: selectedPayment.data || {},
+        status: "pending",
+        createdAt: serverTimestamp()
+      });
+
+      if (currentUser?.phone) {
+        try {
+          const { sendOrderNotif } = await import("/assets/js/wa-bot.js");
+          await sendOrderNotif(currentUser.phone, {
+            orderId, gameName: currentGame.name, productName: selectedProduct.name,
+            gameUserId: userId, serverId, price: total, status: "pending"
+          });
+        } catch (e) {}
+      }
+
+      toast("Pesanan dibuat!", "success");
+      playSound("success");
+      setTimeout(() => location.href = `/invoice.html?orderId=${orderId}`, 800);
+    } catch (e) {
+      toast("Gagal: " + e.message, "error");
+      btn.disabled = false;
+      btn.textContent = "✅ Buat Pesanan";
+    }
+  };
+};
+
+load();
+</script>
+
+</body>
+</html>

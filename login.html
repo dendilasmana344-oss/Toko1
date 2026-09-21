@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+  <div class="text-center mb-6">
+    <img src="/assets/image/logo.jpg" alt="Logo" class="w-20 h-20 mx-auto rounded-2xl logo-3d mb-3" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwMGQ0ZmYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNhODU1ZjciLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSJ1cmwoI2cpIi8+PHRleHQgeD0iNTAiIHk9IjY4IiBmb250LXNpemU9IjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSI+8J+OrzwvdGV4dD48L3N2Zz4='">
+    <h1 class="text-3xl font-black neon-text">CHAOS STORE</h1>
+    <p class="text-gray-400 text-sm mt-1">Masuk dengan nomor WhatsApp</p>
+  </div>
+
+  <div class="glass-3d p-8">
+    <div id="stepPhone">
+      <h2 class="text-xl font-bold mb-4 text-center">📱 Login</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Nomor WhatsApp</label>
+          <div class="flex items-center">
+            <span class="px-3 py-3 rounded-l-xl bg-white/5 border border-r-0 border-white/10 font-mono text-sm">+62</span>
+            <input id="phoneInput" type="tel" inputmode="numeric" class="input-field rounded-l-none" placeholder="81234567890" maxlength="13">
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Contoh: 81234567890 (tanpa 0/+62)</p>
+        </div>
+        <button id="btnSendOtp" class="glow-btn w-full">
+          <span id="sendOtpText">📤 Kirim Kode Verifikasi</span>
+        </button>
+      </div>
+      <div class="text-center mt-6 text-sm text-gray-400">
+        Belum punya akun? <a href="/register.html" class="text-cyan-400 hover:underline font-semibold">Daftar</a>
+      </div>
+    </div>
+
+    <div id="stepOtp" class="hidden">
+      <h2 class="text-xl font-bold mb-2 text-center">🔐 Verifikasi Kode</h2>
+      <p class="text-center text-sm text-gray-400 mb-6">
+        Kode dikirim ke <span id="phoneDisplay" class="text-cyan-400 font-mono font-semibold"></span>
+      </p>
+      <div class="flex justify-center gap-2 mb-6" id="otpContainer">
+        <input class="otp-input" maxlength="1" inputmode="numeric" data-idx="0">
+        <input class="otp-input" maxlength="1" inputmode="numeric" data-idx="1">
+        <input class="otp-input" maxlength="1" inputmode="numeric" data-idx="2">
+        <input class="otp-input" maxlength="1" inputmode="numeric" data-idx="3">
+        <input class="otp-input" maxlength="1" inputmode="numeric" data-idx="4">
+        <input class="otp-input" maxlength="1" inputmode="numeric" data-idx="5">
+      </div>
+      <p class="text-center text-xs text-gray-500 mb-4">
+        Kode berlaku: <span id="timer" class="text-cyan-400 font-mono font-bold">05:00</span>
+      </p>
+      <button id="btnVerify" class="glow-btn w-full mb-3" disabled>✅ Verifikasi & Masuk</button>
+      <div class="flex gap-2">
+        <button id="btnResend" class="flex-1 glow-btn-outline text-sm" disabled>
+          Kirim Ulang <span id="resendTimer"></span>
+        </button>
+        <button id="btnBackPhone" class="flex-1 glow-btn-outline text-sm">← Ubah Nomor</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-6">
+    <a href="/index.html" class="text-sm text-gray-400 hover:text-cyan-400">← Kembali ke toko</a>
+  </div>
+</div>
+
+<script type="module">
+import {
+  db, doc, getDoc, setDoc, serverTimestamp,
+  toast, playSound, generateOTP, normalizePhone, isValidPhone,
+  sendOTP, setCurrentUser, startSession
+} from "/assets/js/main.js";
+
+let currentPhone = "";
+let currentOtp = "";
+let otpExpiresAt = 0;
+let timerInterval = null;
+let resendInterval = null;
+
+document.getElementById("phoneInput").addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "");
+});
+
+document.getElementById("btnSendOtp").onclick = async () => {
+  const raw = document.getElementById("phoneInput").value.trim();
+  if (!raw) return toast("Masukkan nomor WA", "error");
+
+  const phone = normalizePhone(raw);
+  if (!isValidPhone(phone)) return toast("Nomor tidak valid", "error");
+
+  const btn = document.getElementById("btnSendOtp");
+  const txt = document.getElementById("sendOtpText");
+  btn.disabled = true;
+  txt.textContent = "⏳ Memeriksa akun...";
+
+  try {
+    const userSnap = await getDoc(doc(db, "users", phone));
+    if (!userSnap.exists()) {
+      toast("Nomor belum terdaftar. Silakan daftar dulu.", "error");
+      btn.disabled = false;
+      txt.textContent = "📤 Kirim Kode Verifikasi";
+      return;
+    }
+
+    currentOtp = generateOTP(6);
+    otpExpiresAt = Date.now() + 5 * 60 * 1000;
+
+    txt.textContent = "⏳ Mengirim OTP...";
+    const result = await sendOTP(phone, currentOtp);
+
+    await setDoc(doc(db, "otp_sessions", phone), {
+      phone,
+      otp: currentOtp,
+      expiresAt: otpExpiresAt,
+      attempts: 0,
+      createdAt: serverTimestamp()
+    });
+
+    if (!result.success) {
+      toast("WA bot belum dikonfigurasi admin. OTP: " + currentOtp, "info", 8000);
+      console.log("🔐 OTP (fallback mode):", currentOtp);
+    } else {
+      toast("Kode OTP terkirim ke WA!", "success");
+    }
+
+    playSound("notif");
+    currentPhone = phone;
+    document.getElementById("phoneDisplay").textContent = "+" + phone;
+    document.getElementById("stepPhone").classList.add("hidden");
+    document.getElementById("stepOtp").classList.remove("hidden");
+    startTimer();
+    document.querySelector(".otp-input").focus();
+  } catch (e) {
+    console.error(e);
+    toast("Gagal: " + e.message, "error");
+    btn.disabled = false;
+    txt.textContent = "📤 Kirim Kode Verifikasi";
+  }
+};
+
+function startTimer() {
+  const timerEl = document.getElementById("timer");
+  timerInterval = setInterval(() => {
+    const remain = otpExpiresAt - Date.now();
+    if (remain <= 0) {
+      clearInterval(timerInterval);
+      timerEl.textContent = "KADALUARSA";
+      timerEl.classList.add("text-red-400");
+      toast("Kode kadaluarsa. Kirim ulang.", "error");
+      return;
+    }
+    const m = String(Math.floor(remain / 60000)).padStart(2, "0");
+    const s = String(Math.floor((remain % 60000) / 1000)).padStart(2, "0");
+    timerEl.textContent = `${m}:${s}`;
+  }, 1000);
+
+  let resendSeconds = 60;
+  const resendEl = document.getElementById("resendTimer");
+  const btnResend = document.getElementById("btnResend");
+  btnResend.disabled = true;
+  resendInterval = setInterval(() => {
+    resendSeconds--;
+    resendEl.textContent = `(${resendSeconds}s)`;
+    if (resendSeconds <= 0) {
+      clearInterval(resendInterval);
+      btnResend.disabled = false;
+      resendEl.textContent = "";
+    }
+  }, 1000);
+}
+
+const otpInputs = document.querySelectorAll(".otp-input");
+otpInputs.forEach((inp, idx) => {
+  inp.addEventListener("input", (e) => {
+    const val = e.target.value.replace(/\D/g, "");
+    e.target.value = val;
+    if (val) {
+      e.target.classList.add("filled");
+      if (idx < otpInputs.length - 1) otpInputs[idx + 1].focus();
+    } else {
+      e.target.classList.remove("filled");
+    }
+    checkOtpComplete();
+  });
+  inp.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && !e.target.value && idx > 0) {
+      otpInputs[idx - 1].focus();
+    }
+  });
+  inp.addEventListener("paste", (e) => {
+    e.preventDefault();
+    const paste = (e.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, 6);
+    paste.split("").forEach((ch, i) => {
+      if (otpInputs[i]) {
+        otpInputs[i].value = ch;
+        otpInputs[i].classList.add("filled");
+      }
+    });
+    checkOtpComplete();
+  });
+});
+
+function checkOtpComplete() {
+  const code = Array.from(otpInputs).map((i) => i.value).join("");
+  document.getElementById("btnVerify").disabled = code.length !== 6;
+}
+
+document.getElementById("btnVerify").onclick = async () => {
+  const code = Array.from(otpInputs).map((i) => i.value).join("");
+  if (code.length !== 6) return;
+
+  const btn = document.getElementById("btnVerify");
+  btn.disabled = true;
+  btn.textContent = "⏳ Verifikasi...";
+
+  try {
+    const snap = await getDoc(doc(db, "otp_sessions", currentPhone));
+    if (!snap.exists()) throw new Error("Sesi OTP tidak ditemukan");
+
+    const data = snap.data();
+    if (Date.now() > data.expiresAt) throw new Error("Kode kadaluarsa");
+    if (data.attempts >= 5) throw new Error("Terlalu banyak percobaan");
+    if (data.otp !== code) {
+      await setDoc(doc(db, "otp_sessions", currentPhone), {
+        attempts: (data.attempts || 0) + 1
+      }, { merge: true });
+      throw new Error("Kode salah");
+    }
+
+    const userSnap = await getDoc(doc(db, "users", currentPhone));
+    if (!userSnap.exists()) throw new Error("User tidak ditemukan");
+
+    const user = { phone: currentPhone, ...userSnap.data(), verified: true };
+    setCurrentUser(user);
+    startSession(24);
+
+    await setDoc(doc(db, "users", currentPhone), {
+      lastLogin: serverTimestamp()
+    }, { merge: true });
+
+    playSound("success");
+    toast("Login berhasil! 🎉", "success");
+
+    const redirect = sessionStorage.getItem("chaos_redirect");
+    sessionStorage.removeItem("chaos_redirect");
+    setTimeout(() => location.href = redirect || "/index.html", 800);
+  } catch (e) {
+    playSound("error");
+    toast(e.message, "error");
+    btn.disabled = false;
+    btn.textContent = "✅ Verifikasi & Masuk";
+  }
+};
+
+document.getElementById("btnResend").onclick = async () => {
+  const btn = document.getElementById("btnResend");
+  btn.disabled = true;
+  currentOtp = generateOTP(6);
+  otpExpiresAt = Date.now() + 5 * 60 * 1000;
+  clearInterval(timerInterval);
+
+  await setDoc(doc(db, "otp_sessions", currentPhone), {
+    otp: currentOtp,
+    expiresAt: otpExpiresAt,
+    attempts: 0,
+    createdAt: serverTimestamp()
+  });
+
+  const result = await sendOTP(currentPhone, currentOtp);
+  if (!result.success) {
+    toast("OTP baru: " + currentOtp, "info", 8000);
+  } else {
+    toast("OTP baru terkirim!", "success");
+  }
+  startTimer();
+};
+
+document.getElementById("btnBackPhone").onclick = () => {
+  clearInterval(timerInterval);
+  clearInterval(resendInterval);
+  document.getElementById("stepOtp").classList.add("hidden");
+  document.getElementById("stepPhone").classList.remove("hidden");
+  otpInputs.forEach((i) => { i.value = ""; i.classList.remove("filled"); });
+  document.getElementById("btnSendOtp").disabled = false;
+  document.getElementById("sendOtpText").textContent = "📤 Kirim Kode Verifikasi";
+};
+</script>
+
+</body>
+</html>

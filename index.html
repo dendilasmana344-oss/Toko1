@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHAOS STORE - Top Up Game Online Termurah</title>
+<meta name="description" content="Top up diamond, voucher, dan saldo game termurah. Blood Strike, MLBB, FF, Valorant, Roblox, FiveM, Genshin.">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<nav class="glass-strong sticky top-0 z-50 px-4 md:px-8 py-3">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <a href="/index.html" class="flex items-center gap-2">
+      <img src="/assets/image/logo.jpg" class="w-9 h-9 rounded-lg logo-3d" onerror="this.style.display='none'">
+      <span class="text-xl md:text-2xl font-black neon-text">CHAOS<span class="text-white">STORE</span></span>
+    </a>
+    <div class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300">
+      <a href="/index.html" class="text-cyan-400">Beranda</a>
+      <a href="#games" class="hover:text-cyan-400 transition">Game</a>
+      <a href="/chat.html" class="hover:text-cyan-400 transition">💬 Chat</a>
+      <a href="/profile.html" class="hover:text-cyan-400 transition">📋 Pesanan</a>
+    </div>
+    <div class="flex items-center gap-2" id="navAuth">
+      <a href="/login.html" class="px-4 py-2 rounded-lg border border-cyan-400/30 hover:bg-cyan-400/10 transition text-sm hidden" id="btnLogin">Masuk</a>
+      <a href="/register.html" class="glow-btn text-sm hidden" id="btnRegister">Daftar</a>
+      <div class="hidden items-center gap-2" id="userMenu">
+        <a href="/profile.html" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-sm font-bold" id="userAvatar">U</div>
+          <span id="userName" class="text-sm font-semibold hidden md:inline">User</span>
+        </a>
+        <button id="btnLogout" class="text-xs px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300">Keluar</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="max-w-7xl mx-auto px-4 md:px-8 pt-6">
+  <div class="relative rounded-3xl overflow-hidden border border-white/5" id="heroBanner" style="box-shadow: 0 30px 80px -20px rgba(0, 212, 255, 0.4)">
+    <img id="heroImage" src="/assets/image/banner-default.jpg" class="w-full h-full object-cover brightness-50 absolute inset-0" onerror="this.src='https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600'">
+    <div class="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
+    <div class="relative z-10 p-8 md:p-16 min-h-[380px] flex flex-col justify-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/20 border border-pink-500/50 text-pink-300 text-xs font-bold w-fit mb-4 animate-float">
+        🔥 PROMO SPESIAL HARI INI
+      </div>
+      <h1 class="hero-title mb-4">
+        Top Up <span class="neon-text">Termurah</span><br>& Tercepat
+      </h1>
+      <p class="text-gray-300 text-base md:text-lg max-w-xl mb-8">
+        Diamond, voucher, dan saldo game favoritmu. Proses otomatis 24 jam.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <a href="#games" class="glow-btn">🎮 Mulai Top Up</a>
+        <a href="/chat.html" class="glow-btn-outline">💬 Chat Admin</a>
+      </div>
+      <div class="grid grid-cols-3 gap-4 mt-10 max-w-md">
+        <div><div class="text-2xl md:text-3xl font-black neon-text">24/7</div><div class="text-xs text-gray-400 mt-1">Online</div></div>
+        <div><div class="text-2xl md:text-3xl font-black neon-text">100%</div><div class="text-xs text-gray-400 mt-1">Aman</div></div>
+        <div><div class="text-2xl md:text-3xl font-black neon-text">Instan</div><div class="text-xs text-gray-400 mt-1">Proses</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 md:px-8 py-6">
+  <div class="glass rounded-2xl p-3 overflow-hidden">
+    <div class="marquee">
+      <div class="marquee-content text-sm text-gray-300">
+        <span class="mx-6">📢 Selamat datang di CHAOS STORE!</span>
+        <span class="mx-6">⚡ Proses otomatis 24 jam</span>
+        <span class="mx-6">💎 Diamond termurah se-Indonesia</span>
+        <span class="mx-6">🔒 100% Aman & Terpercaya</span>
+        <span class="mx-6">💬 Live chat dengan admin</span>
+        <span class="mx-6">🎁 Bonus menarik setiap hari</span>
+        <span class="mx-6">📢 Selamat datang di CHAOS STORE!</span>
+        <span class="mx-6">⚡ Proses otomatis 24 jam</span>
+        <span class="mx-6">💎 Diamond termurah se-Indonesia</span>
+        <span class="mx-6">🔒 100% Aman & Terpercaya</span>
+        <span class="mx-6">💬 Live chat dengan admin</span>
+        <span class="mx-6">🎁 Bonus menarik setiap hari</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="games" class="max-w-7xl mx-auto px-4 md:px-8 py-10">
+  <div class="mb-6">
+    <h2 class="text-3xl md:text-5xl font-black">🎮 <span class="neon-text">Semua Game</span></h2>
+    <p class="text-gray-400 mt-2 text-sm md:text-base">Pilih game favoritmu</p>
+  </div>
+  <div class="mb-6">
+    <input id="searchGame" type="text" placeholder="🔍 Cari game..." class="input-field">
+  </div>
+  <div id="gamesGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"></div>
+  <div id="loadingGames" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+    <div class="skeleton h-64"></div><div class="skeleton h-64"></div>
+    <div class="skeleton h-64"></div><div class="skeleton h-64"></div>
+  </div>
+  <div id="emptyGames" class="hidden text-center py-20">
+    <div class="text-7xl mb-4">🎮</div>
+    <p class="text-gray-400 text-lg">Belum ada game</p>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 md:px-8 py-10">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="stat-card text-center"><div class="text-5xl mb-3">⚡</div><div class="font-bold text-xl neon-text mb-1">Instan</div><div class="text-xs text-gray-400">Proses cepat</div></div>
+    <div class="stat-card text-center"><div class="text-5xl mb-3">🔒</div><div class="font-bold text-xl neon-text mb-1">Aman</div><div class="text-xs text-gray-400">100% terpercaya</div></div>
+    <div class="stat-card text-center"><div class="text-5xl mb-3">💎</div><div class="font-bold text-xl neon-text mb-1">Murah</div><div class="text-xs text-gray-400">Harga terbaik</div></div>
+    <div class="stat-card text-center"><div class="text-5xl mb-3">💬</div><div class="font-bold text-xl neon-text mb-1">Support</div><div class="text-xs text-gray-400">Live chat 24/7</div></div>
+  </div>
+</section>
+
+<footer class="glass-strong mt-16 py-10 px-4">
+  <div class="max-w-7xl mx-auto text-center">
+    <div class="text-3xl font-black neon-text mb-3">CHAOS STORE</div>
+    <p class="text-gray-400 text-sm mb-6">Top up game online termurah & terpercaya</p>
+    <div class="flex justify-center flex-wrap gap-6 text-sm text-gray-400">
+      <a href="/index.html" class="hover:text-cyan-400">Beranda</a>
+      <a href="/chat.html" class="hover:text-cyan-400">Live Chat</a>
+      <a href="/profile.html" class="hover:text-cyan-400">Pesanan</a>
+      <a href="/admin/login.html" class="hover:text-cyan-400">Admin</a>
+    </div>
+    <p class="text-xs text-gray-500 mt-6">© 2025 CHAOS STORE. All rights reserved.</p>
+  </div>
+</footer>
+
+<div class="chat-widget" id="chatWidget">
+  <div class="chat-fab pulse-ring">💬</div>
+  <div class="chat-notif hidden" id="chatNotif">0</div>
+</div>
+
+<script type="module">
+import {
+  db, collection, onSnapshot, getCurrentUser, isLoggedIn, clearCurrentUser, playSound
+} from "/assets/js/main.js";
+
+const user = getCurrentUser();
+const btnLogin = document.getElementById("btnLogin");
+const btnRegister = document.getElementById("btnRegister");
+const userMenu = document.getElementById("userMenu");
+
+if (isLoggedIn() && user) {
+  btnLogin.classList.add("hidden");
+  btnRegister.classList.add("hidden");
+  userMenu.classList.remove("hidden");
+  userMenu.classList.add("flex");
+  document.getElementById("userName").textContent = user.username || "User";
+  document.getElementById("userAvatar").textContent = (user.username || "U")[0].toUpperCase();
+} else {
+  btnLogin.classList.remove("hidden");
+  btnRegister.classList.remove("hidden");
+  userMenu.classList.add("hidden");
+}
+
+document.getElementById("btnLogout").onclick = () => {
+  clearCurrentUser();
+  location.reload();
+};
+
+document.getElementById("chatWidget").onclick = () => location.href = "/chat.html";
+
+let allGames = [];
+
+onSnapshot(collection(db, "games"), (snap) => {
+  allGames = [];
+  snap.forEach((d) => allGames.push({ id: d.id, ...d.data() }));
+  document.getElementById("loadingGames").classList.add("hidden");
+  renderGames(allGames);
+});
+
+function renderGames(list) {
+  const grid = document.getElementById("gamesGrid");
+  if (list.length === 0) {
+    grid.innerHTML = "";
+    document.getElementById("emptyGames").classList.remove("hidden");
+    return;
+  }
+  document.getElementById("emptyGames").classList.add("hidden");
+  grid.innerHTML = list.map((g) => {
+    const img = g.image || "/assets/image/game-default.jpg";
+    return `
+      <a href="/produk.html?id=${g.id}" class="game-card">
+        <div class="relative overflow-hidden">
+          <img src="${img}" alt="${g.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x300/15151f/00d4ff?text=${encodeURIComponent(g.name)}'">
+          ${g.badge ? `<span class="badge badge-${g.badge} absolute top-3 right-3 z-10">${g.badge}</span>` : ''}
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-base md:text-lg mb-1 truncate">${g.name}</h3>
+          <p class="text-xs text-gray-400 mb-3">${g.publisher || 'Publisher'}</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-yellow-400">⭐ ${g.rating || '5.0'}</span>
+            <span class="text-xs text-cyan-400">Top Up →</span>
+          </div>
+        </div>
+      </a>
+    `;
+  }).join("");
+}
+
+document.getElementById("searchGame").addEventListener("input", (e) => {
+  const q = e.target.value.toLowerCase();
+  renderGames(allGames.filter((g) => g.name.toLowerCase().includes(q)));
+});
+</script>
+
+</body>
+</html>

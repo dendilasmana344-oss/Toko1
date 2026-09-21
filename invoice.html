@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice - CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<nav class="glass-strong sticky top-0 z-50 px-4 md:px-8 py-3">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <a href="/index.html" class="flex items-center gap-2">
+      <img src="/assets/image/logo.jpg" class="w-8 h-8 rounded-lg" onerror="this.style.display='none'">
+      <span class="text-lg md:text-xl font-black neon-text">CHAOS<span class="text-white">STORE</span></span>
+    </a>
+    <div class="flex gap-2">
+      <a href="/profile.html" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-sm">📋 Pesanan</a>
+      <a href="/index.html" class="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-sm">← Beranda</a>
+    </div>
+  </div>
+</nav>
+
+<section class="max-w-3xl mx-auto px-4 md:px-8 py-8">
+  <div id="loading" class="glass-3d rounded-2xl p-8 text-center">
+    <div class="text-4xl mb-3 animate-float">⏳</div>
+    <p class="text-gray-400">Memuat invoice...</p>
+  </div>
+  <div id="invoiceContent" class="hidden"></div>
+</section>
+
+<script type="module">
+import {
+  db, collection, query, where, onSnapshot, doc, getDoc,
+  formatRupiah, formatDate
+} from "/assets/js/main.js";
+
+const params = new URLSearchParams(location.search);
+const orderId = params.get("orderId");
+
+if (!orderId) {
+  document.getElementById("loading").innerHTML = `<div class="text-4xl mb-3">❌</div><p class="text-red-400">Order ID tidak ditemukan</p>`;
+} else {
+  const q = query(collection(db, "orders"), where("orderId", "==", orderId));
+  onSnapshot(q, (snap) => {
+    if (snap.empty) {
+      document.getElementById("loading").innerHTML = `<div class="text-4xl mb-3">❌</div><p class="text-red-400">Invoice tidak ditemukan</p>`;
+      return;
+    }
+    renderInvoice({ id: snap.docs[0].id, ...snap.docs[0].data() });
+  });
+}
+
+async function renderInvoice(o) {
+  document.getElementById("loading").classList.add("hidden");
+  const c = document.getElementById("invoiceContent");
+  c.classList.remove("hidden");
+
+  const statusMap = {
+    pending: { cls: "status-pending", txt: "⏳ Menunggu Pembayaran" },
+    diproses: { cls: "status-diproses", txt: "🔄 Diproses" },
+    sukses: { cls: "status-sukses", txt: "✅ Sukses" },
+    gagal: { cls: "status-gagal", txt: "❌ Gagal" }
+  };
+  const st = statusMap[o.status] || statusMap.pending;
+
+  let paymentDetailHTML = "";
+  const paySnap = await getDoc(doc(db, "settings", "payments"));
+  const payments = paySnap.exists() ? paySnap.data() : {};
+
+  if (o.status === "pending" && o.paymentMethod) {
+    if (o.paymentMethod.startsWith("bank_")) {
+      const bankId = o.paymentMethod.replace("bank_", "");
+      const bank = (payments.banks || []).find((b) => b.name === bankId);
+      if (bank) {
+        paymentDetailHTML = `
+          <div class="glass rounded-2xl p-6 mb-6">
+            <h3 class="font-bold mb-3">🏦 Transfer ke Rekening</h3>
+            <div class="flex items-center gap-4 mb-3">
+              <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-2xl font-black" style="color:#003d82">${bank.name}</div>
+              <div>
+                <div class="font-bold">${bank.name}</div>
+                <div class="font-mono text-xl text-cyan-400">${bank.account}</div>
+                <div class="text-sm text-gray-400">a/n ${bank.holder}</div>
+              </div>
+            </div>
+            <div class="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+              ⚠️ Transfer sesuai nominal. Setelah transfer, kirim bukti ke admin via chat.
+            </div>
+          </div>
+        `;
+      }
+    } else if (o.paymentMethod.startsWith("ewallet_")) {
+      const ewalletId = o.paymentMethod.replace("ewallet_", "");
+      const ew = (payments.ewallets || []).find((e) => e.name === ewalletId);
+      if (ew) {
+        paymentDetailHTML = `
+          <div class="glass rounded-2xl p-6 mb-6">
+            <h3 class="font-bold mb-3">💙 Transfer ke E-Wallet</h3>
+            <div class="flex items-center gap-4 mb-3">
+              <div class="w-16 h-16 rounded-xl flex items-center justify-center font-black text-white text-xs" style="background:#118EEA">${ew.name}</div>
+              <div>
+                <div class="font-bold">${ew.name}</div>
+                <div class="font-mono text-xl text-cyan-400">${ew.account}</div>
+                <div class="text-sm text-gray-400">a/n ${ew.holder}</div>
+              </div>
+            </div>
+            <div class="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+              ⚠️ Kirim sesuai nominal ke nomor di atas. Setelah kirim, chat admin.
+            </div>
+          </div>
+        `;
+      }
+    } else if (o.paymentMethod === "qris") {
+      paymentDetailHTML = `
+        <div class="glass rounded-2xl p-6 mb-6">
+          <h3 class="font-bold mb-3">📱 Scan QRIS</h3>
+          <div class="text-center">
+            <div class="bg-white p-4 rounded-xl inline-block">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('CHAOS|' + o.orderId + '|' + o.price)}" alt="QRIS" class="rounded">
+            </div>
+            <p class="text-xs text-gray-400 mt-3">Scan pakai aplikasi bank/e-wallet apa saja</p>
+          </div>
+        </div>
+      `;
+    } else if (o.paymentMethod === "alfamart" || o.paymentMethod === "indomaret") {
+      paymentDetailHTML = `
+        <div class="glass rounded-2xl p-6 mb-6">
+          <h3 class="font-bold mb-3">🏪 Bayar di ${o.paymentName}</h3>
+          <div class="text-center py-4">
+            <div class="text-5xl font-mono font-black neon-text mb-2">${o.orderId}</div>
+            <p class="text-xs text-gray-400">Tunjukkan kode ini ke kasir</p>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  c.innerHTML = `
+    <div class="glass-3d p-6 md:p-8 mb-6" style="box-shadow: 0 0 40px rgba(0, 212, 255, 0.15)">
+      <div class="text-center mb-6">
+        <div class="text-5xl mb-3">${o.status === 'sukses' ? '✅' : o.status === 'gagal' ? '❌' : o.status === 'diproses' ? '🔄' : '🧾'}</div>
+        <h1 class="text-2xl md:text-3xl font-black mb-2">Invoice</h1>
+        <div class="inline-block px-4 py-2 rounded-lg ${st.cls} font-semibold text-sm">${st.txt}</div>
+      </div>
+
+      <div class="space-y-3 text-sm border-y border-white/10 py-4 mb-4">
+        <div class="flex justify-between"><span class="text-gray-400">Order ID</span><span class="font-mono font-semibold text-cyan-400">${o.orderId}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Tanggal</span><span>${formatDate(o.createdAt)}</span></div>
+        ${o.userId ? `<div class="flex justify-between"><span class="text-gray-400">No WA</span><span class="font-mono text-xs">${o.userId}</span></div>` : ''}
+      </div>
+
+      <div class="space-y-3 text-sm border-b border-white/10 py-4 mb-4">
+        <div class="flex justify-between"><span class="text-gray-400">Game</span><span class="font-semibold">${o.gameName}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Produk</span><span class="font-semibold">${o.productName}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">User ID</span><span class="font-mono">${o.gameUserId}</span></div>
+        ${o.serverId ? `<div class="flex justify-between"><span class="text-gray-400">Server</span><span class="font-mono">${o.serverId}</span></div>` : ''}
+        <div class="flex justify-between"><span class="text-gray-400">Metode</span><span>${o.paymentName || '-'}</span></div>
+      </div>
+
+      <div class="flex justify-between items-center pt-4">
+        <span class="text-lg font-semibold">Total</span>
+        <span class="text-2xl md:text-3xl font-black neon-text">${formatRupiah(o.price)}</span>
+      </div>
+    </div>
+
+    ${paymentDetailHTML}
+
+    ${o.status === 'sukses' ? `
+      <div class="glass-3d p-6 mb-6 text-center bg-green-500/10 border border-green-500/30">
+        <div class="text-4xl mb-2">🎉</div>
+        <p class="font-bold text-green-400 mb-1">Pesanan Berhasil!</p>
+        <p class="text-sm text-gray-400">Item sudah masuk ke akun Anda. Terima kasih!</p>
+      </div>
+    ` : ''}
+
+    ${o.status === 'gagal' ? `
+      <div class="glass-3d p-6 mb-6 text-center bg-red-500/10 border border-red-500/30">
+        <div class="text-4xl mb-2">❌</div>
+        <p class="font-bold text-red-400 mb-1">Pesanan Gagal</p>
+        <p class="text-sm text-gray-400">Silakan chat admin untuk info lebih lanjut</p>
+      </div>
+    ` : ''}
+
+    <div class="flex gap-3">
+      <a href="/index.html" class="flex-1 text-center px-4 py-3 rounded-lg border border-white/20 hover:bg-white/5">🏠 Beranda</a>
+      <a href="/chat.html" class="flex-1 text-center glow-btn">💬 Chat Admin</a>
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>
