@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setting - Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<aside class="admin-sidebar" id="sidebar">
+  <div class="p-6 border-b border-white/5 flex items-center gap-2">
+    <img src="/assets/image/logo.jpg" class="w-9 h-9 rounded-lg" onerror="this.style.display='none'">
+    <span class="text-lg font-black neon-text">ADMIN</span>
+  </div>
+  <nav class="py-4">
+    <a href="/admin/dashboard.html" class="admin-nav-item">📊 Dashboard</a>
+    <a href="/admin/produk.html" class="admin-nav-item">🎮 Produk</a>
+    <a href="/admin/pesanan.html" class="admin-nav-item">📦 Pesanan</a>
+    <a href="/admin/user.html" class="admin-nav-item">👥 Users</a>
+    <a href="/admin/chat.html" class="admin-nav-item">💬 Chat</a>
+    <a href="/admin/payment.html" class="admin-nav-item">💳 Payment</a>
+    <a href="/admin/banner.html" class="admin-nav-item">🖼️ Banner</a>
+    <a href="/admin/broadcast.html" class="admin-nav-item">📢 Broadcast</a>
+    <a href="/admin/setting.html" class="admin-nav-item active">⚙️ Setting</a>
+    <a href="/index.html" class="admin-nav-item">🏠 Lihat Toko</a>
+    <a href="#" id="btnLogout" class="admin-nav-item" style="color:#ef4444;">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main class="admin-main">
+  <header class="glass-strong px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <button id="btnToggle" class="md:hidden text-2xl">☰</button>
+      <h1 class="text-xl font-bold">⚙️ Setting</h1>
+    </div>
+  </header>
+
+  <div class="p-4 md:p-8 space-y-6">
+
+    <div class="glass-3d p-6">
+      <h2 class="font-bold text-lg mb-4">🔐 Ganti PIN Admin</h2>
+      <form id="formPin" class="space-y-3 max-w-md">
+        <input id="pinOld" type="password" class="input-field" placeholder="PIN lama">
+        <input id="pinNew" type="password" class="input-field" placeholder="PIN baru (min 6)">
+        <input id="pinConfirm" type="password" class="input-field" placeholder="Konfirmasi PIN baru">
+        <button type="submit" class="glow-btn">🔒 Ganti PIN</button>
+      </form>
+    </div>
+
+    <div class="glass-3d p-6">
+      <h2 class="font-bold text-lg mb-4">📱 Bot WhatsApp (Fonnte)</h2>
+      <p class="text-sm text-gray-400 mb-4">
+        Daftar gratis di <a href="https://fonnte.com" target="_blank" class="text-cyan-400 underline">fonnte.com</a> → hubungkan nomor WA → copy token di bawah.
+      </p>
+      <form id="formWa" class="space-y-3 max-w-lg">
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Nomor WA Pengirim *</label>
+          <div class="flex items-center">
+            <span class="px-3 py-3 rounded-l-xl bg-white/5 border border-r-0 border-white/10 font-mono text-sm">+62</span>
+            <input id="waSenderPhone" type="tel" class="input-field rounded-l-none" placeholder="81234567890">
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Nama Pengirim</label>
+          <input id="waSenderName" type="text" class="input-field" placeholder="CHAOS STORE">
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Fonnte Token *</label>
+          <input id="waToken" type="text" class="input-field font-mono" placeholder="paste token dari fonnte">
+        </div>
+        <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+          <input id="waEnabled" type="checkbox" class="w-4 h-4">
+          <span>Aktifkan Bot WA (OTP, notif order, broadcast)</span>
+        </label>
+        <div class="flex gap-2 flex-wrap">
+          <button type="submit" class="glow-btn">💾 Simpan</button>
+          <button type="button" id="btnTestWa" class="glow-btn-outline">📤 Test Kirim</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="glass-3d p-6">
+      <h2 class="font-bold text-lg mb-4">🏪 Info Toko</h2>
+      <form id="formStore" class="space-y-3 max-w-lg">
+        <input id="storeName" type="text" class="input-field" placeholder="Nama toko">
+        <input id="storeWa" type="tel" class="input-field" placeholder="No WA support (628xxx)">
+        <textarea id="storeInfo" class="input-field" rows="3" placeholder="Info toko / pemberitahuan"></textarea>
+        <button type="submit" class="glow-btn">💾 Simpan</button>
+      </form>
+    </div>
+
+    <div class="glass-3d p-6">
+      <h2 class="font-bold text-lg mb-4">📋 Log WA Terakhir</h2>
+      <div id="waLogs" class="space-y-2 max-h-80 overflow-y-auto"></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { requireAdminSession, adminLogout } from "/assets/js/admin-guard.js";
+import {
+  db, doc, getDoc, setDoc, collection, onSnapshot, query, orderBy, limit,
+  serverTimestamp, hashPin, verifyPin, toast, normalizePhone, sendWa, formatDate
+} from "/assets/js/main.js";
+
+requireAdminSession();
+document.getElementById("btnLogout").onclick = (e) => { e.preventDefault(); adminLogout(); };
+document.getElementById("btnToggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+getDoc(doc(db, "settings", "wa")).then((s) => {
+  if (s.exists()) {
+    const d = s.data();
+    document.getElementById("waSenderPhone").value = (d.senderPhone || "").replace(/^62/, "");
+    document.getElementById("waSenderName").value = d.senderName || "";
+    document.getElementById("waToken").value = d.token || "";
+    document.getElementById("waEnabled").checked = d.enabled || false;
+  }
+});
+
+getDoc(doc(db, "settings", "store")).then((s) => {
+  if (s.exists()) {
+    const d = s.data();
+    document.getElementById("storeName").value = d.name || "";
+    document.getElementById("storeWa").value = d.wa || "";
+    document.getElementById("storeInfo").value = d.info || "";
+  }
+});
+
+document.getElementById("formWa").onsubmit = async (e) => {
+  e.preventDefault();
+  const phone = normalizePhone(document.getElementById("waSenderPhone").value);
+  await setDoc(doc(db, "settings", "wa"), {
+    senderPhone: phone,
+    senderName: document.getElementById("waSenderName").value.trim(),
+    token: document.getElementById("waToken").value.trim(),
+    provider: "fonnte",
+    enabled: document.getElementById("waEnabled").checked,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  toast("Setting WA disimpan!", "success");
+};
+
+document.getElementById("btnTestWa").onclick = async () => {
+  const phone = normalizePhone(document.getElementById("waSenderPhone").value);
+  if (!phone) return toast("Isi nomor dulu", "error");
+  const result = await sendWa(phone, "✅ Test dari CHAOS STORE berhasil!");
+  if (result.success) toast("Test WA terkirim!", "success");
+  else toast("Gagal: " + (result.reason || result.error || "cek token"), "error");
+};
+
+document.getElementById("formStore").onsubmit = async (e) => {
+  e.preventDefault();
+  await setDoc(doc(db, "settings", "store"), {
+    name: document.getElementById("storeName").value.trim(),
+    wa: normalizePhone(document.getElementById("storeWa").value),
+    info: document.getElementById("storeInfo").value.trim(),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  toast("Info toko disimpan!", "success");
+};
+
+document.getElementById("formPin").onsubmit = async (e) => {
+  e.preventDefault();
+  const oldPin = document.getElementById("pinOld").value;
+  const newPin = document.getElementById("pinNew").value;
+  const confirm = document.getElementById("pinConfirm").value;
+
+  if (newPin.length < 6) return toast("PIN minimal 6 karakter", "error");
+  if (newPin !== confirm) return toast("Konfirmasi PIN tidak sama", "error");
+
+  const snap = await getDoc(doc(db, "settings", "admin_pin"));
+  if (!snap.exists()) return toast("PIN lama belum di-set", "error");
+
+  const ok = await verifyPin(oldPin, snap.data().hash);
+  if (!ok) return toast("PIN lama salah", "error");
+
+  const newHash = await hashPin(newPin);
+  await setDoc(doc(db, "settings", "admin_pin"), { hash: newHash, updatedAt: serverTimestamp() }, { merge: true });
+  toast("PIN berhasil diganti!", "success");
+  document.getElementById("formPin").reset();
+};
+
+const q = query(collection(db, "wa_logs"), orderBy("createdAt", "desc"), limit(20));
+onSnapshot(q, (snap) => {
+  const el = document.getElementById("waLogs");
+  if (snap.empty) { el.innerHTML = `<div class="text-gray-400 text-sm">Belum ada log</div>`; return; }
+  el.innerHTML = snap.docs.map((d) => {
+    const l = d.data();
+    const color = l.status === "sent" ? "text-green-400" : l.status === "failed" ? "text-yellow-400" : "text-red-400";
+    return `
+      <div class="glass rounded-lg p-3 text-xs">
+        <div class="flex justify-between mb-1">
+          <span class="font-mono text-cyan-400">${l.phone}</span>
+          <span class="${color} font-bold">${l.status}</span>
+        </div>
+        <div class="text-gray-300 line-clamp-2">${(l.message || "").substring(0, 100)}</div>
+        <div class="text-gray-500 mt-1">${formatDate(l.createdAt)}</div>
+      </div>
+    `;
+  }).join("");
+});
+</script>
+
+</body>
+</html>

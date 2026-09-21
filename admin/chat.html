@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat - Admin CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<aside class="admin-sidebar" id="sidebar">
+  <div class="p-6 border-b border-white/5 flex items-center gap-2">
+    <img src="/assets/image/logo.jpg" class="w-9 h-9 rounded-lg" onerror="this.style.display='none'">
+    <span class="text-lg font-black neon-text">ADMIN</span>
+  </div>
+  <nav class="py-4">
+    <a href="/admin/dashboard.html" class="admin-nav-item">📊 Dashboard</a>
+    <a href="/admin/produk.html" class="admin-nav-item">🎮 Produk</a>
+    <a href="/admin/pesanan.html" class="admin-nav-item">📦 Pesanan</a>
+    <a href="/admin/user.html" class="admin-nav-item">👥 Users</a>
+    <a href="/admin/chat.html" class="admin-nav-item active">💬 Chat</a>
+    <a href="/admin/payment.html" class="admin-nav-item">💳 Payment</a>
+    <a href="/admin/banner.html" class="admin-nav-item">🖼️ Banner</a>
+    <a href="/admin/broadcast.html" class="admin-nav-item">📢 Broadcast</a>
+    <a href="/admin/setting.html" class="admin-nav-item">⚙️ Setting</a>
+    <a href="/index.html" class="admin-nav-item">🏠 Lihat Toko</a>
+    <a href="#" id="btnLogout" class="admin-nav-item" style="color:#ef4444;">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main class="admin-main">
+  <header class="glass-strong px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <button id="btnToggle" class="md:hidden text-2xl">☰</button>
+      <h1 class="text-xl font-bold">💬 Live Chat</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="btnSoundToggle" class="text-xs px-3 py-1.5 rounded-lg bg-green-500/20 border border-green-500/40 text-green-300">🔔 Suara ON</button>
+    </div>
+  </header>
+
+  <div class="p-4 md:p-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" style="height: calc(100vh - 200px); min-height: 500px;">
+      <div class="glass-3d p-4 overflow-y-auto">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold">💬 Daftar Chat</h3>
+          <input id="searchChat" type="text" class="input-field text-xs" placeholder="🔍" style="width:100px;">
+        </div>
+        <div id="chatList" class="space-y-2"></div>
+      </div>
+
+      <div class="md:col-span-2 glass-3d flex flex-col overflow-hidden">
+        <div id="chatHeader" class="p-4 border-b border-white/5">
+          <div class="text-sm text-gray-400">Pilih chat untuk membalas</div>
+        </div>
+
+        <div class="chat-container flex-1" id="adminChatBox">
+          <div class="text-center py-8 text-gray-500">
+            <div class="text-4xl mb-2">💬</div>
+            <p>Pilih chat di kiri untuk mulai membalas</p>
+          </div>
+        </div>
+
+        <div class="p-3 border-t border-white/5 flex items-end gap-2">
+          <button id="btnAttachAdmin" class="p-2.5 rounded-xl border border-white/10 hover:bg-white/5 text-xl transition" title="Kirim gambar">📎</button>
+          <input type="file" id="fileInputAdmin" accept="image/*" hidden>
+          <textarea id="msgInputAdmin" rows="1" placeholder="Balas pesan..." class="input-field flex-1 resize-none" style="min-height:44px; max-height:120px;" disabled></textarea>
+          <button id="btnSendAdmin" class="glow-btn px-5 py-2.5" disabled>➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { requireAdminSession, adminLogout } from "/assets/js/admin-guard.js";
+import {
+  db, collection, doc, addDoc, setDoc, onSnapshot, query, orderBy,
+  serverTimestamp, toast, formatTime, escapeHtml, uploadToImgBB, playSound
+} from "/assets/js/main.js";
+
+requireAdminSession();
+document.getElementById("btnLogout").onclick = (e) => { e.preventDefault(); adminLogout(); };
+document.getElementById("btnToggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+let allChats = [];
+let activeChatId = null;
+let unsubMessages = null;
+let soundEnabled = true;
+let searchQuery = "";
+let lastMsgTimestamp = 0;
+let firstLoad = true;
+
+document.getElementById("btnSoundToggle").onclick = function() {
+  soundEnabled = !soundEnabled;
+  this.textContent = soundEnabled ? "🔔 Suara ON" : "🔕 Suara OFF";
+  this.classList.toggle("bg-green-500/20");
+  this.classList.toggle("bg-red-500/20");
+  toast(soundEnabled ? "Suara aktif" : "Suara nonaktif", "info");
+};
+
+onSnapshot(collection(db, "chats"), (snap) => {
+  allChats = [];
+  snap.forEach((d) => allChats.push({ id: d.id, ...d.data() }));
+  allChats.sort((a, b) => (b.lastMessageAt?.toMillis?.() || 0) - (a.lastMessageAt?.toMillis?.() || 0));
+  renderChatList();
+});
+
+document.getElementById("searchChat").addEventListener("input", (e) => {
+  searchQuery = e.target.value.toLowerCase();
+  renderChatList();
+});
+
+function renderChatList() {
+  const list = document.getElementById("chatList");
+  let chats = allChats;
+  if (searchQuery) {
+    chats = chats.filter((c) =>
+      (c.username || "").toLowerCase().includes(searchQuery) ||
+      (c.deviceId || c.id || "").toLowerCase().includes(searchQuery)
+    );
+  }
+  if (chats.length === 0) {
+    list.innerHTML = `<div class="text-center text-gray-500 text-sm py-8">Belum ada chat</div>`;
+    return;
+  }
+  list.innerHTML = chats.map((c) => {
+    const active = activeChatId === c.id;
+    const hasUnread = (c.unreadAdmin || 0) > 0;
+    return `
+      <div class="p-3 rounded-xl cursor-pointer transition ${active ? 'bg-cyan-400/15 border border-cyan-400/40' : 'hover:bg-white/5 border border-transparent'}" onclick="openChat('${c.id}')">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold">${(c.username || 'U')[0].toUpperCase()}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-sm truncate">${c.username || 'Guest'}</div>
+            <div class="text-[10px] text-gray-500 font-mono truncate">${c.deviceId || c.id}</div>
+          </div>
+          ${hasUnread ? `<span class="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center pulse-ring">${c.unreadAdmin}</span>` : ''}
+        </div>
+        <div class="text-xs text-gray-400 truncate">${c.lastMessage || 'Belum ada pesan'}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+window.openChat = async (chatId) => {
+  activeChatId = chatId;
+  renderChatList();
+
+  const chat = allChats.find((c) => c.id === chatId);
+  document.getElementById("chatHeader").innerHTML = `
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold">${(chat?.username || 'U')[0].toUpperCase()}</div>
+      <div class="flex-1">
+        <div class="font-bold">${chat?.username || 'Guest'}</div>
+        <div class="text-xs text-gray-400 font-mono">${chat?.deviceId || chatId}</div>
+      </div>
+      <button onclick="setDoc(doc(db, 'chats', '${chatId}'), { unreadAdmin: 0 }, { merge: true })" class="btn-sm btn-info">✓ Tandai Dibaca</button>
+    </div>
+  `;
+
+  if (unsubMessages) unsubMessages();
+  firstLoad = true;
+
+  const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+  unsubMessages = onSnapshot(q, (snap) => {
+    const box = document.getElementById("adminChatBox");
+    box.innerHTML = "";
+    if (snap.empty) {
+      box.innerHTML = `<div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">💬</div><p>Belum ada pesan</p></div>`;
+    } else {
+      snap.forEach((d) => {
+        const m = d.data();
+        const isAdmin = m.from === "admin";
+        const el = document.createElement("div");
+        el.className = `flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
+        el.innerHTML = `
+          <div class="chat-bubble ${isAdmin ? 'chat-user' : 'chat-admin'}">
+            ${!isAdmin && m.username ? `<div class="text-xs font-bold text-cyan-400 mb-1">${escapeHtml(m.username)}</div>` : ''}
+            ${m.image ? `<img src="${m.image}" class="rounded-lg mb-2 max-w-full cursor-pointer" style="max-width:220px" onclick="window.open('${m.image}','_blank')">` : ''}
+            ${m.text ? `<div>${escapeHtml(m.text)}</div>` : ''}
+            <span class="chat-time">${isAdmin ? '🛡️ Admin' : '👤 User'} • ${formatTime(m.createdAt)}</span>
+          </div>
+        `;
+        box.appendChild(el);
+      });
+    }
+    setTimeout(() => box.scrollTop = box.scrollHeight, 50);
+
+    if (!firstLoad && soundEnabled && snap.docs.length > 0) {
+      const lastMsg = snap.docs[snap.docs.length - 1].data();
+      const ts = lastMsg.createdAt?.toMillis?.() || 0;
+      if (lastMsg.from === "user" && ts > lastMsgTimestamp) {
+        playSound("notif");
+        lastMsgTimestamp = ts;
+      }
+    }
+    if (snap.docs.length > 0) {
+      const lastMsg = snap.docs[snap.docs.length - 1].data();
+      lastMsgTimestamp = lastMsg.createdAt?.toMillis?.() || 0;
+    }
+    firstLoad = false;
+
+    setDoc(doc(db, "chats", chatId), { unreadAdmin: 0 }, { merge: true });
+  });
+
+  const input = document.getElementById("msgInputAdmin");
+  const btn = document.getElementById("btnSendAdmin");
+  input.disabled = false;
+  btn.disabled = false;
+  input.focus();
+};
+
+document.getElementById("btnSendAdmin").onclick = async () => {
+  if (!activeChatId) return;
+  const input = document.getElementById("msgInputAdmin");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  input.style.height = "auto";
+
+  try {
+    await addDoc(collection(db, "chats", activeChatId, "messages"), {
+      from: "admin",
+      text,
+      image: "",
+      createdAt: serverTimestamp()
+    });
+    await setDoc(doc(db, "chats", activeChatId), {
+      lastMessage: text,
+      lastMessageAt: serverTimestamp(),
+      unreadUser: 1
+    }, { merge: true });
+  } catch (e) {
+    toast("Gagal kirim: " + e.message, "error");
+  }
+};
+
+document.getElementById("msgInputAdmin").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById("btnSendAdmin").click();
+  }
+});
+
+document.getElementById("msgInputAdmin").addEventListener("input", (e) => {
+  e.target.style.height = "auto";
+  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+});
+
+document.getElementById("btnAttachAdmin").onclick = () => document.getElementById("fileInputAdmin").click();
+
+document.getElementById("fileInputAdmin").onchange = async (e) => {
+  if (!activeChatId) return;
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    toast("Max 5MB", "error");
+    return;
+  }
+  toast("Upload gambar...", "info");
+  try {
+    const url = await uploadToImgBB(file);
+    await addDoc(collection(db, "chats", activeChatId, "messages"), {
+      from: "admin",
+      text: "",
+      image: url,
+      createdAt: serverTimestamp()
+    });
+    await setDoc(doc(db, "chats", activeChatId), {
+      lastMessage: "📷 Gambar",
+      lastMessageAt: serverTimestamp(),
+      unreadUser: 1
+    }, { merge: true });
+    toast("Gambar terkirim!", "success");
+  } catch (err) {
+    toast("Gagal upload: " + err.message, "error");
+  }
+  e.target.value = "";
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Users - Admin CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<aside class="admin-sidebar" id="sidebar">
+  <div class="p-6 border-b border-white/5 flex items-center gap-2">
+    <img src="/assets/image/logo.jpg" class="w-9 h-9 rounded-lg" onerror="this.style.display='none'">
+    <span class="text-lg font-black neon-text">ADMIN</span>
+  </div>
+  <nav class="py-4">
+    <a href="/admin/dashboard.html" class="admin-nav-item">📊 Dashboard</a>
+    <a href="/admin/produk.html" class="admin-nav-item">🎮 Produk</a>
+    <a href="/admin/pesanan.html" class="admin-nav-item">📦 Pesanan</a>
+    <a href="/admin/user.html" class="admin-nav-item active">👥 Users</a>
+    <a href="/admin/chat.html" class="admin-nav-item">💬 Chat</a>
+    <a href="/admin/payment.html" class="admin-nav-item">💳 Payment</a>
+    <a href="/admin/banner.html" class="admin-nav-item">🖼️ Banner</a>
+    <a href="/admin/broadcast.html" class="admin-nav-item">📢 Broadcast</a>
+    <a href="/admin/setting.html" class="admin-nav-item">⚙️ Setting</a>
+    <a href="/index.html" class="admin-nav-item">🏠 Lihat Toko</a>
+    <a href="#" id="btnLogout" class="admin-nav-item" style="color:#ef4444;">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main class="admin-main">
+  <header class="glass-strong px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <button id="btnToggle" class="md:hidden text-2xl">☰</button>
+      <h1 class="text-xl font-bold">👥 Manajemen User</h1>
+    </div>
+    <div class="flex gap-2">
+      <span id="userCount" class="text-xs px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">0 user</span>
+      <input id="searchUser" type="text" class="input-field text-sm" placeholder="🔍 Cari" style="width:150px;">
+    </div>
+  </header>
+
+  <div class="p-4 md:p-8">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="stat-card"><div class="text-xs text-gray-400 mb-1">Total User</div><div id="cUsers" class="text-2xl font-bold">0</div></div>
+      <div class="stat-card"><div class="text-xs text-gray-400 mb-1">Terverifikasi</div><div id="cVerified" class="text-2xl font-bold text-green-400">0</div></div>
+      <div class="stat-card"><div class="text-xs text-gray-400 mb-1">Pernah Beli</div><div id="cBuyers" class="text-2xl font-bold text-cyan-400">0</div></div>
+      <div class="stat-card"><div class="text-xs text-gray-400 mb-1">Total Belanja</div><div id="cRevenue" class="text-lg font-bold neon-text">Rp 0</div></div>
+    </div>
+
+    <div class="glass-3d p-6">
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Avatar</th>
+              <th>Username</th>
+              <th>No WhatsApp</th>
+              <th>Email</th>
+              <th>Total Order</th>
+              <th>Total Belanja</th>
+              <th>Status</th>
+              <th>Terdaftar</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </div>
+      <div id="emptyUsers" class="hidden text-center py-12 text-gray-400">
+        <div class="text-4xl mb-2">👥</div>
+        <p>Belum ada user terdaftar</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="modalUser" class="modal">
+  <div class="modal-content glass-3d p-6">
+    <h3 class="text-xl font-bold mb-4">👤 Detail User</h3>
+    <div id="userDetail"></div>
+    <button onclick="document.getElementById('modalUser').classList.remove('show')" class="glow-btn-outline w-full mt-4">Tutup</button>
+  </div>
+</div>
+
+<script type="module">
+import { requireAdminSession, adminLogout } from "/assets/js/admin-guard.js";
+import {
+  db, collection, doc, deleteDoc, onSnapshot,
+  toast, formatRupiah, formatDate
+} from "/assets/js/main.js";
+
+requireAdminSession();
+document.getElementById("btnLogout").onclick = (e) => { e.preventDefault(); adminLogout(); };
+document.getElementById("btnToggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+let users = [];
+let orders = [];
+let searchQuery = "";
+
+onSnapshot(collection(db, "users"), (snap) => {
+  users = [];
+  snap.forEach((d) => users.push({ id: d.id, ...d.data() }));
+  users.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  renderUsers();
+  updateStats();
+});
+
+onSnapshot(collection(db, "orders"), (snap) => {
+  orders = [];
+  snap.forEach((d) => orders.push({ id: d.id, ...d.data() }));
+  renderUsers();
+  updateStats();
+});
+
+document.getElementById("searchUser").addEventListener("input", (e) => {
+  searchQuery = e.target.value.toLowerCase();
+  renderUsers();
+});
+
+function updateStats() {
+  document.getElementById("cUsers").textContent = users.length;
+  document.getElementById("cVerified").textContent = users.filter((u) => u.verified).length;
+  const buyerIds = [...new Set(orders.map((o) => o.userId).filter(Boolean))];
+  document.getElementById("cBuyers").textContent = buyerIds.length;
+  const revenue = orders.filter((o) => o.status === "sukses").reduce((s, o) => s + (o.price || 0), 0);
+  document.getElementById("cRevenue").textContent = formatRupiah(revenue);
+}
+
+function renderUsers() {
+  document.getElementById("userCount").textContent = users.length + " user";
+  let list = users;
+  if (searchQuery) {
+    list = list.filter((u) =>
+      (u.username || "").toLowerCase().includes(searchQuery) ||
+      (u.phone || u.id || "").toLowerCase().includes(searchQuery) ||
+      (u.email || "").toLowerCase().includes(searchQuery)
+    );
+  }
+
+  const tbody = document.getElementById("usersTable");
+  if (list.length === 0) {
+    tbody.innerHTML = "";
+    document.getElementById("emptyUsers").classList.remove("hidden");
+    return;
+  }
+  document.getElementById("emptyUsers").classList.add("hidden");
+
+  tbody.innerHTML = list.map((u) => {
+    const phone = u.phone || u.id;
+    const uOrders = orders.filter((o) => o.userId === phone);
+    const spent = uOrders.filter((o) => o.status === "sukses").reduce((s, o) => s + (o.price || 0), 0);
+    const initial = (u.username || "U")[0].toUpperCase();
+    return `
+      <tr>
+        <td>
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center font-bold">
+            ${initial}
+          </div>
+        </td>
+        <td class="font-semibold">${u.username || '-'}</td>
+        <td class="font-mono text-xs">${phone}</td>
+        <td class="text-xs">${u.email || '-'}</td>
+        <td class="font-semibold">${uOrders.length}</td>
+        <td class="text-cyan-400 font-semibold">${formatRupiah(spent)}</td>
+        <td>
+          <span class="status-badge ${u.verified ? 'status-sukses' : 'status-pending'}">
+            ${u.verified ? '✅ Verified' : '⏳ Pending'}
+          </span>
+        </td>
+        <td class="text-xs text-gray-400">${formatDate(u.createdAt)}</td>
+        <td>
+          <div class="flex gap-1">
+            <button class="btn-sm btn-info" onclick="viewUser('${phone}')">👁️</button>
+            <button class="btn-sm btn-danger" onclick="delUser('${phone}')">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+window.viewUser = (phone) => {
+  const u = users.find((x) => (x.phone || x.id) === phone);
+  if (!u) return;
+  const uOrders = orders.filter((o) => o.userId === phone);
+  const spent = uOrders.filter((o) => o.status === "sukses").reduce((s, o) => s + (o.price || 0), 0);
+
+  document.getElementById("userDetail").innerHTML = `
+    <div class="space-y-3 text-sm">
+      <div class="flex justify-between"><span class="text-gray-400">Username</span><span class="font-bold">${u.username || '-'}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">No WhatsApp</span><span class="font-mono text-cyan-400">${u.phone || u.id}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">Email</span><span>${u.email || '-'}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">Status</span><span>${u.verified ? '✅ Verified' : '⏳ Pending'}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">Terdaftar</span><span>${formatDate(u.createdAt)}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">Terakhir Login</span><span>${formatDate(u.lastLogin)}</span></div>
+      <div class="flex justify-between border-t border-white/10 pt-2 mt-2"><span class="text-gray-400">Total Order</span><span class="font-bold">${uOrders.length}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">Total Belanja</span><span class="font-bold neon-text">${formatRupiah(spent)}</span></div>
+      <div class="border-t border-white/10 pt-2 mt-2">
+        <div class="text-gray-400 mb-2">Riwayat Order (5 terakhir):</div>
+        ${uOrders.slice(0, 5).map((o) => `
+          <div class="text-xs glass rounded-lg p-2 mb-1 flex justify-between">
+            <span>${o.gameName} - ${o.productName}</span>
+            <span class="status-badge status-${o.status}">${o.status}</span>
+          </div>
+        `).join("") || '<div class="text-xs text-gray-500">Belum ada order</div>'}
+      </div>
+    </div>
+  `;
+  document.getElementById("modalUser").classList.add("show");
+};
+
+window.delUser = async (phone) => {
+  if (!confirm(`Hapus user ${phone}? Semua data user akan dihapus.`)) return;
+  try {
+    await deleteDoc(doc(db, "users", phone));
+    toast("User dihapus", "success");
+  } catch (err) {
+    toast("Gagal: " + err.message, "error");
+  }
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login - CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+  <div class="text-center mb-6">
+    <div class="text-6xl mb-3 animate-float">🛡️</div>
+    <h1 class="text-3xl font-black neon-text">ADMIN PANEL</h1>
+    <p class="text-gray-400 text-sm mt-2">Akses terbatas untuk administrator</p>
+  </div>
+
+  <div class="glass-3d p-8" style="box-shadow: 0 0 60px rgba(168, 85, 247, 0.3)">
+    <form id="pinForm" class="space-y-4">
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">PIN Admin</label>
+        <input id="pinInput" type="password" inputmode="numeric" maxlength="8" class="input-field text-center text-2xl tracking-[0.5em] font-bold" placeholder="••••••">
+      </div>
+      <button type="submit" class="glow-btn w-full" id="btnSubmit">🔓 Masuk</button>
+    </form>
+
+    <div class="mt-5 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-xs text-yellow-300">
+      <div class="font-bold mb-1">⚠️ Akses Terbatas</div>
+      <div>Halaman ini hanya untuk administrator. PIN disimpan dalam bentuk hash SHA-256.</div>
+    </div>
+
+    <div id="setupHint" class="hidden mt-4 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-300">
+      <div class="font-bold mb-1">🆕 Setup Pertama</div>
+      <div>Belum ada PIN. PIN default: <span class="font-mono font-bold">123456</span>. Segera ganti di halaman setting!</div>
+    </div>
+
+    <a href="/index.html" class="block text-center mt-4 text-sm text-gray-400 hover:text-cyan-400">← Kembali ke toko</a>
+  </div>
+</div>
+
+<script type="module">
+import {
+  db, doc, getDoc, setDoc, serverTimestamp,
+  hashPin, verifyPin, toast, playSound, SESSION_TIMEOUT_MS
+} from "/assets/js/main.js";
+
+const SESSION_KEY = "chaos_admin_session";
+
+const pinRef = doc(db, "settings", "admin_pin");
+const pinSnap = await getDoc(pinRef);
+
+if (!pinSnap.exists()) {
+  document.getElementById("setupHint").classList.remove("hidden");
+}
+
+const existingSession = sessionStorage.getItem(SESSION_KEY);
+if (existingSession) {
+  try {
+    const s = JSON.parse(existingSession);
+    if (Date.now() < s.expiresAt) {
+      location.href = "/admin/dashboard.html";
+    }
+  } catch (e) {}
+}
+
+document.getElementById("pinForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const input = document.getElementById("pinInput").value;
+  const btn = document.getElementById("btnSubmit");
+  btn.disabled = true;
+  btn.textContent = "⏳ Memverifikasi...";
+
+  try {
+    let storedHash;
+
+    const snap = await getDoc(pinRef);
+    if (!snap.exists()) {
+      if (input !== "123456") throw new Error("PIN default salah. Gunakan: 123456");
+      const hash = await hashPin(input);
+      await setDoc(pinRef, { hash, createdAt: serverTimestamp() });
+      storedHash = hash;
+      toast("PIN default di-set. Segera ganti!", "info", 5000);
+    } else {
+      storedHash = snap.data().hash;
+      const ok = await verifyPin(input, storedHash);
+      if (!ok) {
+        await new Promise((r) => setTimeout(r, 800));
+        throw new Error("PIN salah");
+      }
+    }
+
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      startedAt: Date.now(),
+      expiresAt: Date.now() + SESSION_TIMEOUT_MS
+    }));
+
+    playSound("success");
+    toast("Login admin berhasil!", "success");
+    setTimeout(() => location.href = "/admin/dashboard.html", 600);
+  } catch (err) {
+    playSound("error");
+    toast(err.message, "error");
+    btn.disabled = false;
+    btn.textContent = "🔓 Masuk";
+    document.getElementById("pinInput").value = "";
+  }
+};
+
+document.getElementById("pinInput").focus();
+</script>
+
+</body>
+</html>

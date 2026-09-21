@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment - Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<aside class="admin-sidebar" id="sidebar">
+  <div class="p-6 border-b border-white/5 flex items-center gap-2">
+    <img src="/assets/image/logo.jpg" class="w-9 h-9 rounded-lg" onerror="this.style.display='none'">
+    <span class="text-lg font-black neon-text">ADMIN</span>
+  </div>
+  <nav class="py-4">
+    <a href="/admin/dashboard.html" class="admin-nav-item">📊 Dashboard</a>
+    <a href="/admin/produk.html" class="admin-nav-item">🎮 Produk</a>
+    <a href="/admin/pesanan.html" class="admin-nav-item">📦 Pesanan</a>
+    <a href="/admin/user.html" class="admin-nav-item">👥 Users</a>
+    <a href="/admin/chat.html" class="admin-nav-item">💬 Chat</a>
+    <a href="/admin/payment.html" class="admin-nav-item active">💳 Payment</a>
+    <a href="/admin/banner.html" class="admin-nav-item">🖼️ Banner</a>
+    <a href="/admin/broadcast.html" class="admin-nav-item">📢 Broadcast</a>
+    <a href="/admin/setting.html" class="admin-nav-item">⚙️ Setting</a>
+    <a href="/index.html" class="admin-nav-item">🏠 Lihat Toko</a>
+    <a href="#" id="btnLogout" class="admin-nav-item" style="color:#ef4444;">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main class="admin-main">
+  <header class="glass-strong px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <button id="btnToggle" class="md:hidden text-2xl">☰</button>
+      <h1 class="text-xl font-bold">💳 Metode Pembayaran</h1>
+    </div>
+  </header>
+
+  <div class="p-4 md:p-8">
+    <div class="glass-3d p-6 mb-6">
+      <h2 class="font-bold text-lg mb-2">🏦 Bank Transfer</h2>
+      <p class="text-sm text-gray-400 mb-4">Isi rekening bank Anda. User akan melihat ini saat checkout.</p>
+      <div id="banksList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <button id="btnAddBank" class="glow-btn mt-4 text-sm">➕ Tambah Bank</button>
+    </div>
+
+    <div class="glass-3d p-6 mb-6">
+      <h2 class="font-bold text-lg mb-2">💙 E-Wallet</h2>
+      <p class="text-sm text-gray-400 mb-4">Isi nomor e-wallet Anda (DANA, OVO, GOPAY, ShopeePay).</p>
+      <div id="ewalletsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <button id="btnAddEwallet" class="glow-btn mt-4 text-sm">➕ Tambah E-Wallet</button>
+    </div>
+
+    <div class="glass-3d p-6">
+      <h2 class="font-bold text-lg mb-2">📱 QRIS Otomatis</h2>
+      <p class="text-sm text-gray-400 mb-4">Integrasi QRIS otomatis (Midtrans / Tripay / Xendit).</p>
+      <form id="formQris" class="space-y-4 max-w-lg">
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Provider</label>
+          <select id="qrisProvider" class="input-field">
+            <option value="">-- Nonaktif --</option>
+            <option value="midtrans">Midtrans</option>
+            <option value="tripay">Tripay</option>
+            <option value="xendit">Xendit</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">API Key / Server Key</label>
+          <input id="qrisApiKey" type="text" class="input-field" placeholder="isi API key dari provider">
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Merchant ID / Kode Merchant</label>
+          <input id="qrisMerchant" type="text" class="input-field" placeholder="opsional">
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Mode</label>
+          <select id="qrisMode" class="input-field">
+            <option value="sandbox">Sandbox (Testing)</option>
+            <option value="production">Production (Live)</option>
+          </select>
+        </div>
+        <button type="submit" class="glow-btn">💾 Simpan QRIS</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<div id="modalBank" class="modal">
+  <div class="modal-content glass-3d p-6">
+    <h3 id="modalBankTitle" class="text-xl font-bold mb-4">Tambah Bank</h3>
+    <form id="formBank" class="space-y-4">
+      <input type="hidden" id="bankId">
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Bank *</label>
+        <select id="bankName" class="input-field" required>
+          <option value="">-- Pilih Bank --</option>
+          <option value="BCA">BCA</option>
+          <option value="BNI">BNI</option>
+          <option value="BRI">BRI</option>
+          <option value="Mandiri">Mandiri</option>
+          <option value="BSI">BSI</option>
+          <option value="CIMB">CIMB Niaga</option>
+          <option value="Permata">Permata</option>
+          <option value="Danamon">Danamon</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Nomor Rekening *</label>
+        <input id="bankAccount" type="text" class="input-field" required>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Atas Nama *</label>
+        <input id="bankHolder" type="text" class="input-field" required>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" id="btnCancelBank" class="flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/5">Batal</button>
+        <button type="submit" class="flex-1 glow-btn">💾 Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="modalEwallet" class="modal">
+  <div class="modal-content glass-3d p-6">
+    <h3 id="modalEwalletTitle" class="text-xl font-bold mb-4">Tambah E-Wallet</h3>
+    <form id="formEwallet" class="space-y-4">
+      <input type="hidden" id="ewalletId">
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">E-Wallet *</label>
+        <select id="ewalletName" class="input-field" required>
+          <option value="">-- Pilih --</option>
+          <option value="DANA">DANA</option>
+          <option value="OVO">OVO</option>
+          <option value="GOPAY">GOPAY</option>
+          <option value="ShopeePay">ShopeePay</option>
+          <option value="LinkAja">LinkAja</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Nomor E-Wallet *</label>
+        <input id="ewalletAccount" type="text" class="input-field" required>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Atas Nama *</label>
+        <input id="ewalletHolder" type="text" class="input-field" required>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" id="btnCancelEwallet" class="flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/5">Batal</button>
+        <button type="submit" class="flex-1 glow-btn">💾 Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+import { requireAdminSession, adminLogout } from "/assets/js/admin-guard.js";
+import {
+  db, doc, getDoc, setDoc, onSnapshot, serverTimestamp, toast
+} from "/assets/js/main.js";
+
+requireAdminSession();
+document.getElementById("btnLogout").onclick = (e) => { e.preventDefault(); adminLogout(); };
+document.getElementById("btnToggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+let banks = [];
+let ewallets = [];
+
+onSnapshot(doc(db, "settings", "payments"), (snap) => {
+  if (snap.exists()) {
+    const data = snap.data();
+    banks = data.banks || [];
+    ewallets = data.ewallets || [];
+    renderBanks();
+    renderEwallets();
+  }
+});
+
+getDoc(doc(db, "settings", "payments")).then((snap) => {
+  if (snap.exists()) {
+    const d = snap.data();
+    document.getElementById("qrisProvider").value = d.qrisProvider || "";
+    document.getElementById("qrisApiKey").value = d.qrisApiKey || "";
+    document.getElementById("qrisMerchant").value = d.qrisMerchant || "";
+    document.getElementById("qrisMode").value = d.qrisMode || "sandbox";
+  }
+});
+
+function renderBanks() {
+  const el = document.getElementById("banksList");
+  if (banks.length === 0) {
+    el.innerHTML = `<div class="text-gray-400 text-sm col-span-full">Belum ada bank. Klik "Tambah Bank".</div>`;
+    return;
+  }
+  el.innerHTML = banks.map((b, i) => `
+    <div class="glass rounded-xl p-4 flex items-center gap-3">
+      <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-xl font-black" style="color:#003d82">${b.name}</div>
+      <div class="flex-1">
+        <div class="font-bold">${b.name}</div>
+        <div class="font-mono text-sm text-cyan-400">${b.account}</div>
+        <div class="text-xs text-gray-400">a/n ${b.holder}</div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <button class="btn-sm btn-info" onclick="editBank(${i})">✏️</button>
+        <button class="btn-sm btn-danger" onclick="delBank(${i})">🗑️</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderEwallets() {
+  const el = document.getElementById("ewalletsList");
+  if (ewallets.length === 0) {
+    el.innerHTML = `<div class="text-gray-400 text-sm col-span-full">Belum ada e-wallet. Klik "Tambah E-Wallet".</div>`;
+    return;
+  }
+  const colors = { DANA: "#118EEA", OVO: "#4C3494", GOPAY: "#00AA13", ShopeePay: "#EE4D2D", LinkAja: "#E82529" };
+  el.innerHTML = ewallets.map((e, i) => `
+    <div class="glass rounded-xl p-4 flex items-center gap-3">
+      <div class="w-16 h-16 rounded-xl flex items-center justify-center font-black text-white text-xs" style="background:${colors[e.name] || '#333'}">${e.name}</div>
+      <div class="flex-1">
+        <div class="font-bold">${e.name}</div>
+        <div class="font-mono text-sm text-cyan-400">${e.account}</div>
+        <div class="text-xs text-gray-400">a/n ${e.holder}</div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <button class="btn-sm btn-info" onclick="editEwallet(${i})">✏️</button>
+        <button class="btn-sm btn-danger" onclick="delEwallet(${i})">🗑️</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function savePayments() {
+  await setDoc(doc(db, "settings", "payments"), {
+    banks, ewallets,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
+
+document.getElementById("btnAddBank").onclick = () => openBankModal();
+document.getElementById("btnCancelBank").onclick = () => document.getElementById("modalBank").classList.remove("show");
+
+function openBankModal(data = null, idx = -1) {
+  document.getElementById("modalBankTitle").textContent = data ? "Edit Bank" : "Tambah Bank";
+  document.getElementById("bankId").value = idx;
+  document.getElementById("bankName").value = data?.name || "";
+  document.getElementById("bankAccount").value = data?.account || "";
+  document.getElementById("bankHolder").value = data?.holder || "";
+  document.getElementById("modalBank").classList.add("show");
+}
+
+document.getElementById("formBank").onsubmit = async (e) => {
+  e.preventDefault();
+  const idx = parseInt(document.getElementById("bankId").value);
+  const data = {
+    name: document.getElementById("bankName").value,
+    account: document.getElementById("bankAccount").value.trim(),
+    holder: document.getElementById("bankHolder").value.trim()
+  };
+  if (idx >= 0) banks[idx] = data;
+  else banks.push(data);
+  await savePayments();
+  toast("Bank disimpan!", "success");
+  document.getElementById("modalBank").classList.remove("show");
+};
+
+window.editBank = (i) => openBankModal(banks[i], i);
+window.delBank = async (i) => {
+  if (!confirm("Hapus bank?")) return;
+  banks.splice(i, 1);
+  await savePayments();
+  toast("Bank dihapus", "success");
+};
+
+document.getElementById("btnAddEwallet").onclick = () => openEwalletModal();
+document.getElementById("btnCancelEwallet").onclick = () => document.getElementById("modalEwallet").classList.remove("show");
+
+function openEwalletModal(data = null, idx = -1) {
+  document.getElementById("modalEwalletTitle").textContent = data ? "Edit E-Wallet" : "Tambah E-Wallet";
+  document.getElementById("ewalletId").value = idx;
+  document.getElementById("ewalletName").value = data?.name || "";
+  document.getElementById("ewalletAccount").value = data?.account || "";
+  document.getElementById("ewalletHolder").value = data?.holder || "";
+  document.getElementById("modalEwallet").classList.add("show");
+}
+
+document.getElementById("formEwallet").onsubmit = async (e) => {
+  e.preventDefault();
+  const idx = parseInt(document.getElementById("ewalletId").value);
+  const data = {
+    name: document.getElementById("ewalletName").value,
+    account: document.getElementById("ewalletAccount").value.trim(),
+    holder: document.getElementById("ewalletHolder").value.trim()
+  };
+  if (idx >= 0) ewallets[idx] = data;
+  else ewallets.push(data);
+  await savePayments();
+  toast("E-Wallet disimpan!", "success");
+  document.getElementById("modalEwallet").classList.remove("show");
+};
+
+window.editEwallet = (i) => openEwalletModal(ewallets[i], i);
+window.delEwallet = async (i) => {
+  if (!confirm("Hapus e-wallet?")) return;
+  ewallets.splice(i, 1);
+  await savePayments();
+  toast("E-Wallet dihapus", "success");
+};
+
+document.getElementById("formQris").onsubmit = async (e) => {
+  e.preventDefault();
+  await setDoc(doc(db, "settings", "payments"), {
+    qrisProvider: document.getElementById("qrisProvider").value,
+    qrisApiKey: document.getElementById("qrisApiKey").value.trim(),
+    qrisMerchant: document.getElementById("qrisMerchant").value.trim(),
+    qrisMode: document.getElementById("qrisMode").value,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  toast("QRIS tersimpan!", "success");
+};
+</script>
+
+</body>
+</html>

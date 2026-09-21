@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banner - Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<aside class="admin-sidebar" id="sidebar">
+  <div class="p-6 border-b border-white/5 flex items-center gap-2">
+    <img src="/assets/image/logo.jpg" class="w-9 h-9 rounded-lg" onerror="this.style.display='none'">
+    <span class="text-lg font-black neon-text">ADMIN</span>
+  </div>
+  <nav class="py-4">
+    <a href="/admin/dashboard.html" class="admin-nav-item">📊 Dashboard</a>
+    <a href="/admin/produk.html" class="admin-nav-item">🎮 Produk</a>
+    <a href="/admin/pesanan.html" class="admin-nav-item">📦 Pesanan</a>
+    <a href="/admin/user.html" class="admin-nav-item">👥 Users</a>
+    <a href="/admin/chat.html" class="admin-nav-item">💬 Chat</a>
+    <a href="/admin/payment.html" class="admin-nav-item">💳 Payment</a>
+    <a href="/admin/banner.html" class="admin-nav-item active">🖼️ Banner</a>
+    <a href="/admin/broadcast.html" class="admin-nav-item">📢 Broadcast</a>
+    <a href="/admin/setting.html" class="admin-nav-item">⚙️ Setting</a>
+    <a href="/index.html" class="admin-nav-item">🏠 Lihat Toko</a>
+    <a href="#" id="btnLogout" class="admin-nav-item" style="color:#ef4444;">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main class="admin-main">
+  <header class="glass-strong px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <button id="btnToggle" class="md:hidden text-2xl">☰</button>
+      <h1 class="text-xl font-bold">🖼️ Banner Hero</h1>
+    </div>
+  </header>
+
+  <div class="p-4 md:p-8">
+    <div class="glass-3d p-6 mb-6">
+      <h2 class="font-bold text-lg mb-2">🎨 Banner Hero (Beranda)</h2>
+      <p class="text-sm text-gray-400 mb-4">
+        Kosongkan → banner otomatis mengikuti game terlaris/pilihan admin.<br>
+        Isi manual → upload dari local atau URL.
+      </p>
+
+      <div class="mb-4">
+        <label class="text-sm text-gray-400 mb-2 block">Pilih Game (untuk auto-banner)</label>
+        <select id="heroGameSelect" class="input-field">
+          <option value="">-- Tidak pakai game (banner default) --</option>
+        </select>
+        <p class="text-xs text-cyan-400 mt-2">💡 Pilih "Blood Strike" → banner Blood Strike otomatis terpasang</p>
+      </div>
+
+      <div class="mb-4">
+        <label class="text-sm text-gray-400 mb-2 block">Atau Upload Banner Manual</label>
+        <input id="heroFile" type="file" accept="image/*" class="input-field">
+        <input id="heroUrl" type="text" class="input-field mt-2" placeholder="atau paste URL gambar">
+      </div>
+
+      <div class="mb-4">
+        <div id="heroPreview" class="rounded-2xl overflow-hidden border border-white/10">
+          <img id="heroPreviewImg" class="w-full h-48 object-cover" src="/assets/image/banner-default.jpg" onerror="this.src='https://via.placeholder.com/800x300/15151f/00d4ff?text=Banner+Preview'">
+        </div>
+      </div>
+
+      <button id="btnSaveHero" class="glow-btn">💾 Simpan Banner Hero</button>
+    </div>
+
+    <div class="glass-3d p-6">
+      <h2 class="font-bold text-lg mb-4">📸 Preview Banner Auto (by Nama Game)</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div><img src="/assets/image/banner-bloodstrike.jpg" class="rounded-xl w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/300x150/dc2626/fff?text=Blood+Strike'"><div class="text-xs text-center mt-1">Blood Strike</div></div>
+        <div><img src="/assets/image/banner-mlbb.jpg" class="rounded-xl w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/300x150/0ea5e9/fff?text=MLBB'"><div class="text-xs text-center mt-1">Mobile Legends</div></div>
+        <div><img src="/assets/image/banner-ff.jpg" class="rounded-xl w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/300x150/f59e0b/fff?text=Free+Fire'"><div class="text-xs text-center mt-1">Free Fire</div></div>
+        <div><img src="/assets/image/banner-valorant.jpg" class="rounded-xl w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/300x150/ef4444/fff?text=Valorant'"><div class="text-xs text-center mt-1">Valorant</div></div>
+        <div><img src="/assets/image/banner-roblox.jpg" class="rounded-xl w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/300x150/dc2626/fff?text=Roblox'"><div class="text-xs text-center mt-1">Roblox</div></div>
+        <div><img src="/assets/image/banner-fivem.jpg" class="rounded-xl w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/300x150/8b5cf6/fff?text=FiveM'"><div class="text-xs text-center mt-1">FiveM</div></div>
+        <div><img src="/assets/image/banner-genshin.jpg" class="rounded-xl w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/300x150/06b6d4/fff?text=Genshin'"><div class="text-xs text-center mt-1">Genshin</div></div>
+        <div><img src="/assets/image/banner-default.jpg" class="rounded-xl w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/300x150/00d4ff/fff?text=Default'"><div class="text-xs text-center mt-1">Default</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { requireAdminSession, adminLogout } from "/assets/js/admin-guard.js";
+import {
+  db, doc, getDoc, setDoc, collection, onSnapshot, serverTimestamp,
+  toast, uploadToImgBB, getBannerForGame
+} from "/assets/js/main.js";
+
+requireAdminSession();
+document.getElementById("btnLogout").onclick = (e) => { e.preventDefault(); adminLogout(); };
+document.getElementById("btnToggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+let games = [];
+
+onSnapshot(collection(db, "games"), (snap) => {
+  games = [];
+  snap.forEach((d) => games.push({ id: d.id, ...d.data() }));
+  const sel = document.getElementById("heroGameSelect");
+  sel.innerHTML = `<option value="">-- Tidak pakai game (default) --</option>` +
+    games.map((g) => `<option value="${g.id}">${g.name}</option>`).join("");
+});
+
+getDoc(doc(db, "settings", "banner")).then((snap) => {
+  if (snap.exists()) {
+    const d = snap.data();
+    if (d.heroGameId) document.getElementById("heroGameSelect").value = d.heroGameId;
+    if (d.heroUrl) {
+      document.getElementById("heroUrl").value = d.heroUrl;
+      document.getElementById("heroPreviewImg").src = d.heroUrl;
+    }
+  }
+});
+
+document.getElementById("heroGameSelect").onchange = (e) => {
+  const g = games.find((x) => x.id === e.target.value);
+  if (g) {
+    const banner = g.banner || getBannerForGame(g.name);
+    document.getElementById("heroPreviewImg").src = banner;
+  }
+};
+
+document.getElementById("heroUrl").oninput = (e) => {
+  if (e.target.value) document.getElementById("heroPreviewImg").src = e.target.value;
+};
+
+document.getElementById("heroFile").onchange = (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => document.getElementById("heroPreviewImg").src = ev.target.result;
+  reader.readAsDataURL(f);
+};
+
+document.getElementById("btnSaveHero").onclick = async () => {
+  const btn = document.getElementById("btnSaveHero");
+  btn.disabled = true;
+  btn.textContent = "⏳ Menyimpan...";
+
+  let url = document.getElementById("heroUrl").value.trim();
+  const file = document.getElementById("heroFile").files[0];
+  const gameId = document.getElementById("heroGameSelect").value;
+
+  if (file) {
+    toast("Upload banner...", "info");
+    try { url = await uploadToImgBB(file); }
+    catch (e) { toast("Gagal upload: " + e.message, "error"); btn.disabled = false; btn.textContent = "💾 Simpan Banner Hero"; return; }
+  }
+
+  await setDoc(doc(db, "settings", "banner"), {
+    heroGameId: gameId,
+    heroUrl: url,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  toast("Banner hero disimpan!", "success");
+  btn.disabled = false;
+  btn.textContent = "💾 Simpan Banner Hero";
+};
+</script>
+
+</body>
+</html>

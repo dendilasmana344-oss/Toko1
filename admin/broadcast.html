@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broadcast - Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="icon" href="/assets/image/logo.jpg">
+</head>
+<body>
+
+<aside class="admin-sidebar" id="sidebar">
+  <div class="p-6 border-b border-white/5 flex items-center gap-2">
+    <img src="/assets/image/logo.jpg" class="w-9 h-9 rounded-lg" onerror="this.style.display='none'">
+    <span class="text-lg font-black neon-text">ADMIN</span>
+  </div>
+  <nav class="py-4">
+    <a href="/admin/dashboard.html" class="admin-nav-item">📊 Dashboard</a>
+    <a href="/admin/produk.html" class="admin-nav-item">🎮 Produk</a>
+    <a href="/admin/pesanan.html" class="admin-nav-item">📦 Pesanan</a>
+    <a href="/admin/user.html" class="admin-nav-item">👥 Users</a>
+    <a href="/admin/chat.html" class="admin-nav-item">💬 Chat</a>
+    <a href="/admin/payment.html" class="admin-nav-item">💳 Payment</a>
+    <a href="/admin/banner.html" class="admin-nav-item">🖼️ Banner</a>
+    <a href="/admin/broadcast.html" class="admin-nav-item active">📢 Broadcast</a>
+    <a href="/admin/setting.html" class="admin-nav-item">⚙️ Setting</a>
+    <a href="/index.html" class="admin-nav-item">🏠 Lihat Toko</a>
+    <a href="#" id="btnLogout" class="admin-nav-item" style="color:#ef4444;">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main class="admin-main">
+  <header class="glass-strong px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <button id="btnToggle" class="md:hidden text-2xl">☰</button>
+      <h1 class="text-xl font-bold">📢 Broadcast WhatsApp</h1>
+    </div>
+  </header>
+
+  <div class="p-4 md:p-8">
+    <div class="glass-3d p-6 mb-6">
+      <h2 class="font-bold text-lg mb-4">📝 Pesan Broadcast</h2>
+      <form id="formBroadcast" class="space-y-4">
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Target</label>
+          <select id="broadcastTarget" class="input-field">
+            <option value="all">📢 Semua User</option>
+            <option value="verified">✅ User Terverifikasi</option>
+            <option value="buyers">💰 User Pernah Beli</option>
+            <option value="custom">✏️ Nomor Custom (pisah pakai koma)</option>
+          </select>
+        </div>
+        <div id="customWrap" class="hidden">
+          <textarea id="customPhones" class="input-field" rows="3" placeholder="628123456789, 628987654321, ..."></textarea>
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-2 block">Pesan *</label>
+          <textarea id="broadcastMsg" class="input-field" rows="6" placeholder="Halo! Ada promo spesial..." required></textarea>
+          <p class="text-xs text-gray-500 mt-1" id="charCount">0 karakter</p>
+        </div>
+        <div class="flex gap-3 flex-wrap">
+          <button type="submit" class="glow-btn">📤 Kirim Broadcast</button>
+          <button type="button" id="btnPreview" class="glow-btn-outline">👁️ Preview</button>
+        </div>
+        <div id="progressWrap" class="hidden">
+          <div class="text-sm text-gray-400 mb-2">Progress: <span id="progressText">0/0</span></div>
+          <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="progressBar" class="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style="width:0%"></div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="glass-3d p-6">
+      <h2 class="font-bold text-lg mb-3">📢 Pemberitahuan Cepat</h2>
+      <p class="text-sm text-gray-400 mb-4">Kirim pemberitahuan penting seperti maintenance ke semua user.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <button class="preset-btn glass rounded-xl p-4 text-left hover:border-cyan-400/40 transition" data-msg="⚠️ *MAINTENANCE*\n\nServer akan maintenance pada pukul 02:00 - 04:00 WIB. Mohon maaf atas ketidaknyamanannya.">
+          <div class="font-bold text-sm">⚠️ Maintenance</div>
+          <div class="text-xs text-gray-400 mt-1">Pemberitahuan maintenance</div>
+        </button>
+        <button class="preset-btn glass rounded-xl p-4 text-left hover:border-cyan-400/40 transition" data-msg="🎉 *PROMO SPESIAL HARI INI!*\n\nDiskon 20% untuk semua diamond! Buruan sebelum kehabisan.">
+          <div class="font-bold text-sm">🎉 Promo</div>
+          <div class="text-xs text-gray-400 mt-1">Promo diskon</div>
+        </button>
+        <button class="preset-btn glass rounded-xl p-4 text-left hover:border-cyan-400/40 transition" data-msg="✅ *PESANAN ANDA SUKSES*\n\nTerima kasih telah top up di CHAOS STORE!">
+          <div class="font-bold text-sm">✅ Sukses</div>
+          <div class="text-xs text-gray-400 mt-1">Notif pesanan sukses</div>
+        </button>
+        <button class="preset-btn glass rounded-xl p-4 text-left hover:border-cyan-400/40 transition" data-msg="🎁 *BONUS SPESIAL*\n\nTop up minimal Rp 50.000 dan dapatkan bonus diamond GRATIS!">
+          <div class="font-bold text-sm">🎁 Bonus</div>
+          <div class="text-xs text-gray-400 mt-1">Promo bonus</div>
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { requireAdminSession, adminLogout } from "/assets/js/admin-guard.js";
+import {
+  db, collection, onSnapshot, toast, sendBroadcast, normalizePhone
+} from "/assets/js/main.js";
+
+requireAdminSession();
+document.getElementById("btnLogout").onclick = (e) => { e.preventDefault(); adminLogout(); };
+document.getElementById("btnToggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+let users = [];
+let orders = [];
+
+onSnapshot(collection(db, "users"), (snap) => {
+  users = [];
+  snap.forEach((d) => users.push({ id: d.id, ...d.data() }));
+});
+
+onSnapshot(collection(db, "orders"), (snap) => {
+  orders = [];
+  snap.forEach((d) => orders.push({ id: d.id, ...d.data() }));
+});
+
+document.getElementById("broadcastTarget").onchange = (e) => {
+  document.getElementById("customWrap").classList.toggle("hidden", e.target.value !== "custom");
+};
+
+document.getElementById("broadcastMsg").oninput = (e) => {
+  document.getElementById("charCount").textContent = e.target.value.length + " karakter";
+};
+
+document.querySelectorAll(".preset-btn").forEach((b) => {
+  b.onclick = () => {
+    document.getElementById("broadcastMsg").value = b.dataset.msg;
+    document.getElementById("charCount").textContent = b.dataset.msg.length + " karakter";
+  };
+});
+
+function getTargets() {
+  const t = document.getElementById("broadcastTarget").value;
+  if (t === "custom") {
+    return document.getElementById("customPhones").value
+      .split(",")
+      .map((p) => normalizePhone(p.trim()))
+      .filter((p) => p.length >= 10);
+  }
+  if (t === "all") return users.map((u) => u.phone || u.id).filter(Boolean);
+  if (t === "verified") return users.filter((u) => u.verified).map((u) => u.phone || u.id);
+  if (t === "buyers") {
+    const buyerIds = [...new Set(orders.map((o) => o.userId).filter(Boolean))];
+    return buyerIds.filter((id) => id.startsWith("62"));
+  }
+  return [];
+}
+
+document.getElementById("btnPreview").onclick = () => {
+  const targets = getTargets();
+  const msg = document.getElementById("broadcastMsg").value;
+  alert(`📋 PREVIEW\n\nTotal target: ${targets.length} nomor\n\nPesan:\n${msg}`);
+};
+
+document.getElementById("formBroadcast").onsubmit = async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById("broadcastMsg").value.trim();
+  if (!msg) return toast("Pesan kosong", "error");
+
+  const targets = getTargets();
+  if (targets.length === 0) return toast("Tidak ada target", "error");
+  if (!confirm(`Kirim broadcast ke ${targets.length} nomor?`)) return;
+
+  const btn = e.submitter || document.querySelector("#formBroadcast button[type='submit']");
+  btn.disabled = true;
+  btn.textContent = "⏳ Mengirim...";
+
+  document.getElementById("progressWrap").classList.remove("hidden");
+
+  let sent = 0;
+  const total = targets.length;
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressText");
+
+  const BATCH = 5;
+  const DELAY = 2000;
+
+  for (let i = 0; i < targets.length; i += BATCH) {
+    const batch = targets.slice(i, i + BATCH);
+    await Promise.all(batch.map(async (phone) => {
+      try {
+        await sendBroadcast([phone], msg);
+      } catch (e) {}
+      sent++;
+      const pct = Math.round((sent / total) * 100);
+      progressBar.style.width = pct + "%";
+      progressText.textContent = `${sent}/${total}`;
+    }));
+    if (i + BATCH < targets.length) await new Promise((r) => setTimeout(r, DELAY));
+  }
+
+  toast(`Broadcast selesai! ${sent}/${total} terkirim`, "success");
+  btn.disabled = false;
+  btn.textContent = "📤 Kirim Broadcast";
+  document.getElementById("formBroadcast").reset();
+  document.getElementById("charCount").textContent = "0 karakter";
+};
+</script>
+
+</body>
+</html>
