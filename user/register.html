@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar - CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+  <div class="text-center mb-8">
+    <a href="/index.html" class="text-3xl font-extrabold neon-text">🎮 CHAOS STORE</a>
+    <p class="text-gray-400 mt-2 text-sm">Buat akun baru</p>
+  </div>
+
+  <div class="glass rounded-2xl p-8 neon-border">
+    <h1 class="text-2xl font-bold mb-6 text-center">✨ Daftar</h1>
+
+    <form id="registerForm" class="space-y-4">
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Nama Lengkap</label>
+        <input id="name" type="text" class="input-field" placeholder="Nama kamu" required>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Email</label>
+        <input id="email" type="email" class="input-field" placeholder="email@example.com" required>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Password (min 6 karakter)</label>
+        <input id="password" type="password" class="input-field" placeholder="••••••••" minlength="6" required>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Konfirmasi Password</label>
+        <input id="confirmPassword" type="password" class="input-field" placeholder="••••••••" minlength="6" required>
+      </div>
+      <button id="btnRegister" type="submit" class="glow-btn w-full">Daftar</button>
+    </form>
+
+    <div class="text-center mt-6 text-sm text-gray-400">
+      Sudah punya akun? <a href="/user/login.html" class="text-cyan-400 hover:underline font-semibold">Masuk</a>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  auth,
+  createUserWithEmailAndPassword, saveUserProfile, toast
+} from "/assets/js/main.js";
+
+document.getElementById("registerForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("btnRegister");
+  const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+
+  if (password !== confirmPassword) return toast("Password tidak sama", "error");
+
+  btn.disabled = true;
+  btn.textContent = "⏳ Mendaftar...";
+
+  try {
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await saveUserProfile(cred.user.uid, { name, email, role: "user" });
+    toast("Daftar berhasil! Selamat datang 🎉", "success");
+    setTimeout(() => location.href = "/user/dashboard.html", 1000);
+  } catch (err) {
+    let msg = "Pendaftaran gagal";
+    if (err.code === "auth/email-already-in-use") msg = "Email sudah digunakan";
+    else if (err.code === "auth/invalid-email") msg = "Format email salah";
+    else if (err.code === "auth/weak-password") msg = "Password terlalu lemah";
+    toast(msg, "error");
+    btn.disabled = false;
+    btn.textContent = "Daftar";
+  }
+};
+</script>
+
+</body>
+</html>
