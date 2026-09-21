@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login - CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/admin/admin.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+  <div class="text-center mb-8">
+    <div class="text-5xl mb-3">🛡️</div>
+    <h1 class="text-3xl font-extrabold neon-text">ADMIN PANEL</h1>
+    <p class="text-gray-400 mt-2 text-sm">CHAOS STORE</p>
+  </div>
+
+  <div class="glass rounded-2xl p-8 neon-border">
+    <form id="adminLoginForm" class="space-y-4">
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Email Admin</label>
+        <input id="email" type="email" class="input-field" placeholder="admin@chaos.com" required>
+      </div>
+      <div>
+        <label class="text-sm text-gray-400 mb-2 block">Password</label>
+        <input id="password" type="password" class="input-field" placeholder="••••••••" required>
+      </div>
+      <button id="btnLogin" type="submit" class="glow-btn w-full">🔓 Login Admin</button>
+    </form>
+
+    <div class="mt-6 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-xs text-yellow-300 text-center">
+      Hanya untuk administrator resmi CHAOS STORE
+    </div>
+  </div>
+
+  <div class="text-center mt-6">
+    <a href="/index.html" class="text-sm text-gray-400 hover:text-cyan-400">← Kembali ke toko</a>
+  </div>
+</div>
+
+<script type="module">
+import {
+  auth, ADMIN_EMAIL,
+  signInWithEmailAndPassword, signOut, toast
+} from "/assets/js/main.js";
+
+document.getElementById("adminLoginForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("btnLogin");
+  btn.disabled = true;
+  btn.textContent = "⏳ Verifikasi...";
+
+  try {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+
+    if (cred.user.email !== ADMIN_EMAIL) {
+      await signOut(auth);
+      toast("Akses ditolak! Bukan admin.", "error");
+      btn.disabled = false;
+      btn.textContent = "🔓 Login Admin";
+      return;
+    }
+
+    toast("Login admin berhasil!", "success");
+    setTimeout(() => location.href = "/admin/admin-dashboard.html", 800);
+  } catch (err) {
+    let msg = "Login gagal";
+    if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") msg = "Email atau password salah";
+    else if (err.code === "auth/user-not-found") msg = "Akun admin tidak ditemukan";
+    toast(msg, "error");
+    btn.disabled = false;
+    btn.textContent = "🔓 Login Admin";
+  }
+};
+</script>
+
+</body>
+      </html>
