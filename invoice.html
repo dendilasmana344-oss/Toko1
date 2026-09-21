@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice - CHAOS STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+</head>
+<body>
+
+<nav class="glass sticky top-0 z-50 px-4 md:px-8 py-4">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <a href="/index.html" class="text-2xl font-extrabold neon-text">🎮 CHAOS<span class="text-white">STORE</span></a>
+    <a href="/user/dashboard.html" class="px-4 py-2 rounded-lg border border-cyan-400/30 hover:bg-cyan-400/10 transition text-sm">📋 Riwayat</a>
+  </div>
+</nav>
+
+<section class="max-w-3xl mx-auto px-4 md:px-8 py-8">
+  <div id="loading" class="glass rounded-2xl p-8 text-center">
+    <div class="text-4xl mb-3 animate-float">⏳</div>
+    <p class="text-gray-400">Memuat invoice...</p>
+  </div>
+
+  <div id="invoiceContent" class="hidden"></div>
+</section>
+
+<script type="module">
+import {
+  db, auth,
+  collection, query, where, onSnapshot, onAuthStateChanged,
+  toast, formatRupiah, formatDate
+} from "/assets/js/main.js";
+
+const params = new URLSearchParams(location.search);
+const orderId = params.get("orderId");
+
+let unsubscribeOrder = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    location.href = "/user/login.html";
+    return;
+  }
+  if (orderId) loadInvoice(orderId);
+});
+
+function loadInvoice(oid) {
+  const q = query(collection(db, "orders"), where("orderId", "==", oid));
+  unsubscribeOrder = onSnapshot(q, (snap) => {
+    if (snap.empty) {
+      document.getElementById("loading").innerHTML = `<div class="text-4xl mb-3">❌</div><p class="text-red-400">Invoice tidak ditemukan</p>`;
+      return;
+    }
+    const data = { id: snap.docs[0].id, ...snap.docs[0].data() };
+    renderInvoice(data);
+  });
+}
+
+function renderInvoice(o) {
+  document.getElementById("loading").classList.add("hidden");
+  const content = document.getElementById("invoiceContent");
+  content.classList.remove("hidden");
+
+  const statusClass = {
+    pending: "status-pending",
+    diproses: "status-diproses",
+    sukses: "status-sukses",
+    gagal: "status-gagal"
+  }[o.status] || "status-pending";
+
+  const statusText = {
+    pending: "⏳ Menunggu Pembayaran",
+    diproses: "🔄 Diproses",
+    sukses: "✅ Sukses",
+    gagal: "❌ Gagal"
+  }[o.status] || "Pending";
+
+  content.innerHTML = `
+    <div class="glass rounded-2xl p-6 md:p-8 neon-border mb-6">
+      <div class="text-center mb-6">
+        <div class="text-5xl mb-3">${o.status === 'sukses' ? '✅' : o.status === 'gagal' ? '❌' : '🧾'}</div>
+        <h1 class="text-2xl md:text-3xl font-extrabold mb-2">Invoice Pesanan</h1>
+        <div class="inline-block px-4 py-2 rounded-lg ${statusClass} font-semibold text-sm">${statusText}</div>
+      </div>
+
+      <div class="space-y-3 text-sm border-y border-white/10 py-4 mb-4">
+        <div class="flex justify-between"><span class="text-gray-400">Order ID</span><span class="font-mono font-semibold text-cyan-400">${o.orderId}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Tanggal</span><span>${formatDate(o.createdAt)}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Email</span><span>${o.userEmail || '-'}</span></div>
+      </div>
+
+      <div class="space-y-3 text-sm border-b border-white/10 py-4 mb-4">
+        <div class="flex justify-between"><span class="text-gray-400">Game</span><span class="font-semibold">${o.gameName}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Produk</span><span class="font-semibold">${o.productName}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">User ID</span><span class="font-mono">${o.gameUserId}</span></div>
+        ${o.serverId ? `<div class="flex justify-between"><span class="text-gray-400">Server</span><span class="font-mono">${o.serverId}</span></div>` : ''}
+      </div>
+
+      <div class="space-y-3 text-sm border-b border-white/10 py-4 mb-4">
+        <div class="flex justify-between"><span class="text-gray-400">Metode Bayar</span><span>${o.paymentName || '-'}</span></div>
+      </div>
+
+      <div class="flex justify-between items-center pt-4">
+        <span class="text-lg font-semibold">Total</span>
+        <span class="text-2xl md:text-3xl font-extrabold neon-text">${formatRupiah(o.price)}</span>
+      </div>
+    </div>
+
+    ${o.status === 'pending' ? `
+      <div class="glass rounded-2xl p-6 mb-6">
+        <h3 class="font-bold mb-3">💳 Scan QRIS untuk Membayar</h3>
+        <div class="text-center">
+          <div class="bg-white p-4 rounded-xl inline-block">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('CHAOS|' + o.orderId + '|' + o.price)}" alt="QR" class="rounded">
+          </div>
+          <p class="text-xs text-gray-400 mt-3">Setelah bayar, admin akan memverifikasi dalam beberapa menit.</p>
+        </div>
+      </div>
+    ` : ''}
+
+    ${o.status === 'sukses' ? `
+      <div class="glass rounded-2xl p-6 mb-6 text-center bg-green-500/10 border border-green-500/30">
+        <div class="text-4xl mb-2">🎉</div>
+        <p class="font-bold text-green-400 mb-1">Pesanan Berhasil!</p>
+        <p class="text-sm text-gray-400">Item sudah masuk ke akun Anda. Terima kasih!</p>
+      </div>
+    ` : ''}
+
+    <div class="flex gap-3">
+      <a href="/index.html" class="flex-1 text-center px-4 py-3 rounded-lg border border-white/20 hover:bg-white/5 transition">🏠 Beranda</a>
+      <a href="/user/dashboard.html" class="flex-1 text-center glow-btn">📋 Riwayat</a>
+    </div>
+  `;
+}
+
+window.addEventListener("beforeunload", () => {
+  if (unsubscribeOrder) unsubscribeOrder();
+});
+</script>
+
+</body>
+</html>
